@@ -37,6 +37,9 @@ fn OrcFile::decode_column(
   let count = present.filter(x => x).length()
   let kind = self.schema.columns[index].kind
   let encoding = stripe.encodings[id]
+  if (kind == Boolean || kind == Byte || kind == Float || kind == Double) && encoding.kind != 0 {
+    raise Unsupported("non-direct boolean/byte/floating encoding")
+  }
   let raw = self.required_stream(stripe, id, 1, count)
   let nonnull : Array[Cell] = match kind {
     Boolean => decode_bits(raw, count).map(x => Bool(x))
@@ -55,6 +58,9 @@ fn OrcFile::decode_column(
       decode_integers(raw, count, true, encoding.kind).map(bits => {
         let value = bits.reinterpret_as_int64()
         if kind == Date {
+          if value < -141427L && number(parse_proto(self.footer, self.limits), 11, 0UL) != 2UL {
+            raise Unsupported("pre-Gregorian date in hybrid calendar file")
+          }
           if value < -2147483648L || value > 2147483647L {
             raise Invalid("date day range", id)
           }
@@ -147,6 +153,7 @@ pub fn OrcFile::read_stripe(
     self.schema.columns[self.schema.index(name)]
   })
   let schema = Schema::new(descriptors, limits=self.limits)
+  if mul(mul(stripe.info.rows, names.length()), 8) > self.limits.max_decoded_bytes { raise Limit("projected stripe cell storage") }
   let values = names.map(name => {
     self.decode_column(stripe, self.schema.index(name))
   })
