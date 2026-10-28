@@ -53,14 +53,27 @@ pub fn write(batch : Batch, options? : WriteOptions = WriteOptions::default(), m
   let body = output()
   body.raw(b"ORC")
   let stripes : Array[StripeInfo] = []
+  let metadata_section = output()
   let mut at = 0
   while at < batch.rows {
     if stripes.length() >= limits.max_stripes { raise Limit("writer stripe count") }
     let count = imin(options.stripe_rows, batch.rows - at)
-    stripes.push(write_stripe(batch.slice(at, count), body, options, limits))
+    let stripe_batch = batch.slice(at, count)
+    stripes.push(write_stripe(stripe_batch, body, options, limits))
+    let stripe_stats = output()
+    let root_stats = output()
+    root_stats.field(1, count.to_uint64())
+    root_stats.field(10, 0UL)
+    stripe_stats.message(1, root_stats.finish())
+    for i = 0; i < batch.schema.columns.length(); i = i + 1 {
+      stripe_stats.message(1, encode_statistics(stripe_batch.values[i], batch.schema.columns[i].kind))
+    }
+    metadata_section.message(1, stripe_stats.finish())
     at += count
   }
   let content_length = body.length()
+  let encoded_metadata = compress(metadata_section.finish(), options.compression, options.block_size)
+  body.raw(encoded_metadata)
   let footer = output()
   footer.field(1, 3UL)
   footer.field(2, content_length.to_uint64())
@@ -75,6 +88,7 @@ pub fn write(batch : Batch, options? : WriteOptions = WriteOptions::default(), m
   }
   footer.field(6, batch.rows.to_uint64())
   footer.field(8, 0UL)
+  footer.field(11, 2UL)
   footer.message(12, b"MoonORC 0.1.0")
   let raw_footer = compress(footer.finish(), options.compression, options.block_size)
   body.raw(raw_footer)
@@ -83,7 +97,7 @@ pub fn write(batch : Batch, options? : WriteOptions = WriteOptions::default(), m
   ps.field(2, if options.compression == None { 0UL } else { 1UL })
   ps.field(3, options.block_size.to_uint64())
   ps.message(4, b"\x00\x0c")
-  ps.field(5, 0UL)
+  ps.field(5, encoded_metadata.length().to_uint64())
   ps.field(6, 6UL)
   ps.message(8000, b"ORC")
   if ps.length() > 255 { raise Limit("postscript length") }
