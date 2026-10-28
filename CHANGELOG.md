@@ -1,0 +1,10 @@
+# Changelog
+
+## 0.1.0 — local prerelease
+
+- Independent native ORC flat record encoding, nullable columns and multi-stripe files.
+- NONE/ZLIB framing, RLEv1/v2 reads, direct and dictionary strings.
+- Projection, exact three-valued filtering, source-row windows, opt-in trusted statistics pruning.
+- Atomic incremental input writer, immutable batch operations, stream range and row-group metadata inspection.
+- Independent Apache ORC oracle, cross-backend fixtures and tests, application scenarios and scale workload.
+- Private local namespace; owner identity, remote repository and publication remain unset by design.

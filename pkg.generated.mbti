@@ -1,0 +1,217 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "local/moonorc"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn concat(Array[Batch], limits? : Limits) -> Batch raise OrcError
+
+pub fn write(Batch, options? : WriteOptions, metadata? : Map[String, Bytes], limits? : Limits) -> Bytes raise OrcError
+
+// Errors
+pub suberror OrcError {
+  Invalid(String, Int32)
+  Unsupported(String)
+  Limit(String)
+} derive(Eq, @debug.Debug)
+pub fn OrcError::equal(Self, Self) -> Bool
+pub fn OrcError::not_equal(Self, Self) -> Bool
+pub fn OrcError::to_repr(Self) -> @debug.Repr
+
+// Types and methods
+pub struct Batch {
+  // private fields
+}
+pub fn Batch::align(Self, Schema, limits? : Limits) -> Self raise OrcError
+pub fn Batch::cell(Self, Int32, String) -> Cell raise OrcError
+pub fn Batch::column(Self, String) -> Array[Cell] raise OrcError
+pub fn Batch::filter(Self, Predicate, limits? : Limits) -> Self raise OrcError
+pub fn Batch::new(Schema, Array[Array[Cell]], limits? : Limits) -> Self raise OrcError
+pub fn Batch::project(Self, Array[String], limits? : Limits) -> Self raise OrcError
+pub fn Batch::rename(Self, Map[String, String], limits? : Limits) -> Self raise OrcError
+pub fn Batch::row_count(Self) -> Int32
+pub fn Batch::schema(Self) -> Schema
+pub fn Batch::slice(Self, Int32, Int32) -> Self raise OrcError
+pub fn Batch::take(Self, Array[Int32], limits? : Limits) -> Self raise OrcError
+
+pub(all) enum Cell {
+  Null
+  Bool(Bool)
+  Integer(Int64)
+  Real(Double)
+  Text(String)
+  Blob(Bytes)
+  Days(Int32)
+} derive(Eq, @debug.Debug)
+pub fn Cell::equal(Self, Self) -> Bool
+pub fn Cell::not_equal(Self, Self) -> Bool
+pub fn Cell::to_repr(Self) -> @debug.Repr
+
+pub(all) struct Column {
+  name : String
+  kind : Kind
+} derive(Eq, @debug.Debug)
+pub fn Column::equal(Self, Self) -> Bool
+pub fn Column::not_equal(Self, Self) -> Bool
+pub fn Column::to_repr(Self) -> @debug.Repr
+
+pub(all) enum Comparison {
+  Equal
+  Less
+  LessEqual
+  Greater
+  GreaterEqual
+} derive(Eq, @debug.Debug)
+pub fn Comparison::equal(Self, Self) -> Bool
+pub fn Comparison::not_equal(Self, Self) -> Bool
+pub fn Comparison::to_repr(Self) -> @debug.Repr
+
+pub(all) enum Compression {
+  None
+  Zlib
+} derive(Eq, @debug.Debug)
+pub fn Compression::equal(Self, Self) -> Bool
+pub fn Compression::not_equal(Self, Self) -> Bool
+pub fn Compression::to_repr(Self) -> @debug.Repr
+
+pub(all) enum Kind {
+  Boolean
+  Byte
+  Short
+  Int
+  Long
+  Float
+  Double
+  String
+  Binary
+  Date
+} derive(Eq, @debug.Debug)
+pub fn Kind::equal(Self, Self) -> Bool
+pub fn Kind::not_equal(Self, Self) -> Bool
+pub fn Kind::to_repr(Self) -> @debug.Repr
+
+pub(all) struct Limits {
+  max_file_bytes : Int32
+  max_decoded_bytes : Int32
+  max_rows : Int32
+  max_columns : Int32
+  max_stripes : Int32
+  max_fields : Int32
+} derive(Eq, @debug.Debug)
+pub fn Limits::default() -> Self
+pub fn Limits::equal(Self, Self) -> Bool
+pub fn Limits::not_equal(Self, Self) -> Bool
+pub fn Limits::to_repr(Self) -> @debug.Repr
+
+pub struct OrcFile {
+  // private fields
+}
+pub fn OrcFile::compression(Self) -> Compression
+pub fn OrcFile::open(Bytes, limits? : Limits) -> Self raise OrcError
+pub fn OrcFile::plan_stripe(Self, Int32, Array[String], include_indexes? : Bool) -> Array[StreamRange] raise OrcError
+pub fn OrcFile::read_stripe(Self, Int32, columns? : Array[String]?) -> Batch raise OrcError
+pub fn OrcFile::row_count(Self) -> Int32
+pub fn OrcFile::row_groups(Self, Int32, String) -> Array[RowGroupInfo] raise OrcError
+pub fn OrcFile::scan(Self, columns? : Array[String]?, predicate? : Predicate, batch_rows? : Int32, trust_statistics? : Bool, row_start? : Int32, row_count? : Int32?) -> Scanner raise OrcError
+pub fn OrcFile::schema(Self) -> Schema
+pub fn OrcFile::stripe_statistics(Self, Int32) -> Array[Statistics] raise OrcError
+pub fn OrcFile::stripes(Self) -> Array[StripeInfo]
+pub fn OrcFile::user_metadata(Self) -> Map[String, Bytes] raise OrcError
+
+pub(all) enum Predicate {
+  Always(Bool)
+  Compare(String, Comparison, Cell)
+  IsNull(String)
+  And(Predicate, Predicate)
+  Or(Predicate, Predicate)
+  Not(Predicate)
+} derive(@debug.Debug)
+pub fn Predicate::to_repr(Self) -> @debug.Repr
+
+pub(all) struct RowGroupInfo {
+  row_start : Int32
+  row_count : Int32
+  positions : Array[UInt64]
+  statistics : Statistics
+} derive(Eq, @debug.Debug)
+pub fn RowGroupInfo::equal(Self, Self) -> Bool
+pub fn RowGroupInfo::not_equal(Self, Self) -> Bool
+pub fn RowGroupInfo::to_repr(Self) -> @debug.Repr
+
+pub(all) struct ScanMetrics {
+  stripes_read : Int32
+  stripes_skipped : Int32
+  rows_examined : Int32
+  rows_returned : Int32
+} derive(Eq, @debug.Debug)
+pub fn ScanMetrics::equal(Self, Self) -> Bool
+pub fn ScanMetrics::not_equal(Self, Self) -> Bool
+pub fn ScanMetrics::to_repr(Self) -> @debug.Repr
+
+pub struct Scanner {
+  // private fields
+}
+pub fn Scanner::metrics(Self) -> ScanMetrics
+pub fn Scanner::next(Self) -> Batch? raise OrcError
+
+pub struct Schema {
+  // private fields
+}
+pub fn Schema::columns(Self) -> Array[Column]
+pub fn Schema::index(Self, String) -> Int32 raise OrcError
+pub fn Schema::new(Array[Column], limits? : Limits) -> Self raise OrcError
+
+pub(all) struct Statistics {
+  count : Int32?
+  has_null : Bool?
+  minimum : Cell?
+  maximum : Cell?
+} derive(Eq, @debug.Debug)
+pub fn Statistics::equal(Self, Self) -> Bool
+pub fn Statistics::not_equal(Self, Self) -> Bool
+pub fn Statistics::to_repr(Self) -> @debug.Repr
+
+pub(all) struct StreamRange {
+  column : String
+  kind : Int32
+  offset : Int32
+  length : Int32
+} derive(Eq, @debug.Debug)
+pub fn StreamRange::equal(Self, Self) -> Bool
+pub fn StreamRange::not_equal(Self, Self) -> Bool
+pub fn StreamRange::to_repr(Self) -> @debug.Repr
+
+pub(all) struct StripeInfo {
+  offset : Int32
+  index_bytes : Int32
+  data_bytes : Int32
+  footer_bytes : Int32
+  rows : Int32
+} derive(Eq, @debug.Debug)
+pub fn StripeInfo::equal(Self, Self) -> Bool
+pub fn StripeInfo::not_equal(Self, Self) -> Bool
+pub fn StripeInfo::to_repr(Self) -> @debug.Repr
+
+pub(all) struct WriteOptions {
+  compression : Compression
+  block_size : Int32
+  stripe_rows : Int32
+} derive(Eq, @debug.Debug)
+pub fn WriteOptions::default() -> Self
+pub fn WriteOptions::equal(Self, Self) -> Bool
+pub fn WriteOptions::not_equal(Self, Self) -> Bool
+pub fn WriteOptions::to_repr(Self) -> @debug.Repr
+
+pub struct Writer {
+  // private fields
+}
+pub fn Writer::finish(Self, metadata? : Map[String, Bytes]) -> Bytes raise OrcError
+pub fn Writer::new(Schema, options? : WriteOptions, limits? : Limits) -> Self raise OrcError
+pub fn Writer::push(Self, Batch) -> Unit raise OrcError
+pub fn Writer::row_count(Self) -> Int32
+
+// Type aliases
+
+// Traits
