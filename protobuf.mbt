@@ -1,7 +1,7 @@
 ///| Only wire values, not generated classes. Unknown fields remain bounded.
-priv enum Wire { Var(UInt64); Data(Bytes); Fixed(UInt64) }
+enum Wire { Var(UInt64); Data(Bytes); Fixed(UInt64) }
 ///|
-priv struct Field { id : Int; wire : Wire }
+struct Field { id : Int; wire : Wire }
 ///|
 fn parse_proto(raw : Bytes, limits : Limits) -> Array[Field] raise OrcError {
   if raw.length() > limits.max_decoded_bytes { raise Limit("protobuf bytes") }
