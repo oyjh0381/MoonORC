@@ -184,7 +184,7 @@ pub fn OrcFile::stripe_statistics(
   if index < 0 || index >= self.stripes.length() {
     raise Invalid("stripe index", index)
   }
-  let raw = blobs(parse_proto(self.metadata, self.limits), 1)
+  let raw = self.metadata
   if raw.is_empty() {
     return Array::make(self.schema.columns.length(), {
       count: None,

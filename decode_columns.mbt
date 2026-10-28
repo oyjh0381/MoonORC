@@ -163,8 +163,21 @@ pub fn OrcFile::read_stripe(
     self.limits.max_decoded_bytes {
     raise Limit("projected stripe cell storage")
   }
-  let values = names.map(name => {
-    self.decode_column(stripe, self.schema.index(name))
-  })
+  let values : Array[Array[Cell]] = []
+  let mut retained = mul(mul(stripe.info.rows, names.length()), 8)
+  for name in names {
+    let column = self.decode_column(stripe, self.schema.index(name))
+    for value in column {
+      match value {
+        Text(text) => retained = add(retained, @utf8.encode(text).length())
+        Blob(bytes) => retained = add(retained, bytes.length())
+        _ => ()
+      }
+      if retained > self.limits.max_decoded_bytes {
+        raise Limit("projected stripe retained bytes")
+      }
+    }
+    values.push(column)
+  }
   Batch::new(schema, values, limits=self.limits)
 }

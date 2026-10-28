@@ -22,7 +22,7 @@ pub struct OrcFile {
   priv block_size : Int32
   priv rows : Int32
   priv footer : Bytes
-  priv metadata : Bytes
+  priv metadata : Array[Bytes]
   priv limits : Limits
 }
 
@@ -127,7 +127,10 @@ pub fn OrcFile::open(
     block_size,
     limits,
   )
-  ignore(parse_proto(metadata, limits))
+  let metadata = blobs(parse_proto(metadata, limits), 1)
+  if !metadata.is_empty() && metadata.length() != stripes.length() {
+    raise Invalid("stripe statistics count", metadata_start)
+  }
   {
     bytes,
     schema,
