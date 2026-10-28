@@ -14,6 +14,28 @@ fn encode_column(kind : Kind, values : Array[Cell]) -> EncodedColumn {
     streams.push((0, encode_bits(present)))
   }
   let values = values.filter(x => x != Null)
+  if kind == String && values.length() >= 4 {
+    let unique : Map[String, Bool] = Map([])
+    for v in values { if v is Text(s) { unique[s] = true } }
+    if unique.length() <= values.length() / 2 {
+      let dictionary = unique.keys().collect()
+      dictionary.sort_by(utf8_compare)
+      let ids : Map[String, Int] = Map([])
+      let data = output()
+      let lengths : Array[UInt64] = []
+      for i = 0; i < dictionary.length(); i = i + 1 {
+        let raw = @utf8.encode(dictionary[i])
+        ids[dictionary[i]] = i
+        lengths.push(raw.length().to_uint64())
+        data.raw(raw)
+      }
+      let references = values.map(v => match v { Text(s) => ids.get(s).unwrap().to_uint64(); _ => 0UL })
+      streams.push((1, encode_rle1(references, false)))
+      streams.push((2, encode_rle1(lengths, false)))
+      streams.push((3, data.finish()))
+      return { encoding: 1, dictionary_size: dictionary.length(), streams }
+    }
+  }
   let raw = output()
   match kind {
     Boolean =>
