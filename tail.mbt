@@ -15,15 +15,15 @@ pub extend StripeInfo with Eq::{equal, not_equal}
 
 ///|
 pub struct OrcFile {
-  bytes : Bytes
-  schema : Schema
-  stripes : Array[StripeInfo]
-  compression : Compression
-  block_size : Int32
-  rows : Int32
-  footer : Bytes
-  metadata : Bytes
-  limits : Limits
+  priv bytes : Bytes
+  priv schema : Schema
+  priv stripes : Array[StripeInfo]
+  priv compression : Compression
+  priv block_size : Int32
+  priv rows : Int32
+  priv footer : Bytes
+  priv metadata : Bytes
+  priv limits : Limits
 }
 
 ///|

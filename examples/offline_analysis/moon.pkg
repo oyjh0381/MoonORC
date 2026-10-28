@@ -1,0 +1,5 @@
+import {
+  "local/moonorc" @orc,
+}
+
+pkgtype(kind: "executable")

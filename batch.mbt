@@ -17,9 +17,9 @@ pub extend Cell with Eq::{equal, not_equal}
 
 ///|
 pub struct Batch {
-  schema : Schema
-  values : Array[Array[Cell]]
-  rows : Int32
+  priv schema : Schema
+  priv values : Array[Array[Cell]]
+  priv rows : Int32
 }
 
 ///|

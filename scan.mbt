@@ -14,17 +14,17 @@ pub extend ScanMetrics with Eq::{equal, not_equal}
 
 ///|
 pub struct Scanner {
-  file : OrcFile
-  names : Array[String]
-  required : Array[String]
-  predicate : Predicate
-  trust_statistics : Bool
-  batch_rows : Int32
-  mut stripe_index : Int32
-  mut pending : Batch?
-  mut pending_row : Int32
-  mut metrics : ScanMetrics
-  mut failure : OrcError?
+  priv file : OrcFile
+  priv names : Array[String]
+  priv required : Array[String]
+  priv predicate : Predicate
+  priv trust_statistics : Bool
+  priv batch_rows : Int32
+  priv mut stripe_index : Int32
+  priv mut pending : Batch?
+  priv mut pending_row : Int32
+  priv mut metrics : ScanMetrics
+  priv mut failure : OrcError?
 }
 
 ///|
@@ -135,14 +135,32 @@ fn Scanner::advance(self : Scanner) -> Batch? raise OrcError {
 }
 
 ///| A decoding failure permanently fails this scanner, preventing a retry from
-///| silently advancing past the malformed stripe and returning incomplete data.
+
+///|
+/// silently advancing past the malformed stripe and returning incomplete data.
 pub fn Scanner::next(self : Scanner) -> Batch? raise OrcError {
-  if self.failure is Some(error) { raise error }
-  errdefer { self.pending = None }
-  try self.advance() catch {
-    Invalid(message, at) => { let error : OrcError = Invalid(message, at); self.failure = Some(error); raise error }
-    Unsupported(message) => { let error : OrcError = Unsupported(message); self.failure = Some(error); raise error }
-    Limit(message) => { let error : OrcError = Limit(message); self.failure = Some(error); raise error }
+  if self.failure is Some(error) {
+    raise error
+  }
+  errdefer {
+    self.pending = None
+  }
+  self.advance() catch {
+    Invalid(message, at) => {
+      let error : OrcError = Invalid(message, at)
+      self.failure = Some(error)
+      raise error
+    }
+    Unsupported(message) => {
+      let error : OrcError = Unsupported(message)
+      self.failure = Some(error)
+      raise error
+    }
+    Limit(message) => {
+      let error : OrcError = Limit(message)
+      self.failure = Some(error)
+      raise error
+    }
   }
 }
 

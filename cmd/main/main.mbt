@@ -27,13 +27,29 @@ async fn run() -> Unit {
   let args = @env.args()
   if args.length() == 4 && args[1] == "rewrite" {
     let limits = @orc.Limits::default()
-    if @fs.file_size(args[2][:]) > limits.max_file_bytes.to_int64() { raise Failure("input exceeds file budget") }
+    if @fs.file_size(args[2][:]) > limits.max_file_bytes.to_int64() {
+      raise Failure("input exceeds file budget")
+    }
     let file = @orc.OrcFile::open(@fs.read_file(args[2][:]).binary())
     let batches : Array[@orc.Batch] = []
     let scan = file.scan()
-    while scan.next() is Some(batch) { batches.push(batch) }
-    let batch = if batches.is_empty() { @orc.Batch::new(file.schema(), file.schema().columns().map(_ => [])) } else { @orc.concat(batches) }
-    @fs.write_file(args[3][:], @orc.write(batch, options={ ..@orc.WriteOptions::default(), compression: Zlib }, metadata=file.user_metadata()), create_mode=CreateNew)
+    while scan.next() is Some(batch) {
+      batches.push(batch)
+    }
+    let batch = if batches.is_empty() {
+      @orc.Batch::new(file.schema(), file.schema().columns().map(_ => []))
+    } else {
+      @orc.concat(batches)
+    }
+    @fs.write_file(
+      args[3][:],
+      @orc.write(
+        batch,
+        options={ ..@orc.WriteOptions::default(), compression: Zlib, },
+        metadata=file.user_metadata(),
+      ),
+      create_mode=CreateNew,
+    )
     println("rewritten ORC records")
     return
   }

@@ -130,11 +130,29 @@ pub fn write(
     metadata_section.message(1, stripe_stats.finish())
     at += count
   }
-  finish_file(body, batch.schema, stripes, metadata_section.finish(), batch.rows, options, metadata, limits)
+  finish_file(
+    body,
+    batch.schema,
+    stripes,
+    metadata_section.finish(),
+    batch.rows,
+    options,
+    metadata,
+    limits,
+  )
 }
 
 ///|
-fn finish_file(body : Output, schema : Schema, stripes : Array[StripeInfo], stripe_statistics : Bytes, rows : Int, options : WriteOptions, metadata : Map[String, Bytes], limits : Limits) -> Bytes raise OrcError {
+fn finish_file(
+  body : Output,
+  schema : Schema,
+  stripes : Array[StripeInfo],
+  stripe_statistics : Bytes,
+  rows : Int32,
+  options : WriteOptions,
+  metadata : Map[String, Bytes],
+  limits : Limits,
+) -> Bytes raise OrcError {
   let content_length = body.length()
   let encoded_metadata = compress(
     stripe_statistics,
