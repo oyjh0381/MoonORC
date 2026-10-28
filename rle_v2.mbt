@@ -49,18 +49,9 @@ fn delta_value(
   signed : Bool,
 ) -> UInt64 raise OrcError {
   if signed {
-    if magnitude > 0x7fffffffffffffffUL {
-      raise Invalid("delta magnitude", 0)
-    }
-    let delta = magnitude.reinterpret_as_int64()
-    signed_add(
-      base.reinterpret_as_int64(),
-      if negative {
-        0L - delta
-      } else {
-        delta
-      },
-    ).reinterpret_as_uint64()
+    let ceiling = if negative { base - 0x8000000000000000UL } else { 0x7fffffffffffffffUL - base }
+    if magnitude > ceiling { raise Invalid("signed delta overflow", 0) }
+    if negative { base - magnitude } else { base + magnitude }
   } else if negative {
     if magnitude > base {
       raise Invalid("delta underflow", 0)
@@ -171,12 +162,7 @@ fn decode_rle2(
         }
         for value in values {
           if signed {
-            if value > 0x7fffffffffffffffUL {
-              raise Invalid("patched signed value range", c.pos)
-            }
-            out.push(
-              signed_add(base_signed, value.reinterpret_as_int64()).reinterpret_as_uint64(),
-            )
+            out.push(delta_value(base_signed.reinterpret_as_uint64(), value, false, true))
           } else {
             if base_signed < 0 {
               raise Invalid("negative unsigned patched base", c.pos)
@@ -201,10 +187,7 @@ fn decode_rle2(
         }
         out.push(value)
         let delta = unzig(c.varint())
-        if delta == -9223372036854775808L {
-          raise Invalid("unrepresentable delta magnitude", c.pos)
-        }
-        let magnitude = (if delta < 0 { 0L - delta } else { delta }).reinterpret_as_uint64()
+        let magnitude = if delta < 0 { 0UL - delta.reinterpret_as_uint64() } else { delta.reinterpret_as_uint64() }
         if n > 1 {
           value = delta_value(value, magnitude, delta < 0, signed)
           out.push(value)
