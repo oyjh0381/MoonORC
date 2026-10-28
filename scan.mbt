@@ -24,6 +24,7 @@ pub struct Scanner {
   mut pending : Batch?
   mut pending_row : Int32
   mut metrics : ScanMetrics
+  mut failure : OrcError?
 }
 
 ///|
@@ -64,6 +65,7 @@ pub fn OrcFile::scan(
     stripe_index: 0,
     pending: None,
     pending_row: 0,
+    failure: None,
     metrics: {
       stripes_read: 0,
       stripes_skipped: 0,
@@ -79,7 +81,7 @@ pub fn Scanner::metrics(self : Scanner) -> ScanMetrics {
 }
 
 ///|
-pub fn Scanner::next(self : Scanner) -> Batch? raise OrcError {
+fn Scanner::advance(self : Scanner) -> Batch? raise OrcError {
   while true {
     if self.pending is Some(batch) && self.pending_row < batch.rows {
       let count = imin(self.batch_rows, batch.rows - self.pending_row)
@@ -129,6 +131,18 @@ pub fn Scanner::next(self : Scanner) -> Batch? raise OrcError {
     self.pending_row = 0
   } nobreak {
     None
+  }
+}
+
+///| A decoding failure permanently fails this scanner, preventing a retry from
+///| silently advancing past the malformed stripe and returning incomplete data.
+pub fn Scanner::next(self : Scanner) -> Batch? raise OrcError {
+  if self.failure is Some(error) { raise error }
+  errdefer { self.pending = None }
+  try self.advance() catch {
+    Invalid(message, at) => { let error : OrcError = Invalid(message, at); self.failure = Some(error); raise error }
+    Unsupported(message) => { let error : OrcError = Unsupported(message); self.failure = Some(error); raise error }
+    Limit(message) => { let error : OrcError = Limit(message); self.failure = Some(error); raise error }
   }
 }
 

@@ -45,7 +45,10 @@ pub fn Schema::new(
     raise Limit("column count")
   }
   let names : Map[String, Bool] = Map([])
+  let mut name_bytes = 0
   for col in columns {
+    name_bytes = add(name_bytes, @utf8.encode(col.name).length())
+    if name_bytes > limits.max_decoded_bytes { raise Limit("schema name bytes") }
     if col.name == "" || col.name.contains("\u0000") || names.contains(col.name) {
       raise Invalid("empty/duplicate column name", 0)
     }
