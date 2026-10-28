@@ -45,3 +45,5 @@ fn mul(a : Int, b : Int) -> Int raise OrcError {
   if a < 0 || b < 0 || (b > 0 && a > 2147483647 / b) { raise Limit("integer multiplication") }
   a * b
 }
+///|
+fn imin(a : Int, b : Int) -> Int { if a < b { a } else { b } }
