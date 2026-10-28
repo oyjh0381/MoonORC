@@ -57,7 +57,12 @@ fn Predicate::validate(
   self : Predicate,
   schema : Schema,
   depth : Int32,
+  budget : Ref[Int32],
 ) -> Unit raise OrcError {
+  budget.val -= 1
+  if budget.val < 0 {
+    raise Limit("predicate expanded node count")
+  }
   if depth > 64 {
     raise Limit("predicate depth")
   }
@@ -72,10 +77,10 @@ fn Predicate::validate(
     }
     IsNull(name) => ignore(schema.index(name))
     And(a, b) | Or(a, b) => {
-      a.validate(schema, depth + 1)
-      b.validate(schema, depth + 1)
+      a.validate(schema, depth + 1, budget)
+      b.validate(schema, depth + 1, budget)
     }
-    Not(a) => a.validate(schema, depth + 1)
+    Not(a) => a.validate(schema, depth + 1, budget)
   }
 }
 
@@ -198,7 +203,7 @@ pub fn Batch::filter(
   predicate : Predicate,
   limits~ : Limits = Limits::default(),
 ) -> Batch raise OrcError {
-  predicate.validate(self.schema, 0)
+  predicate.validate(self.schema, 0, Ref(limits.max_fields))
   let selected : Array[Int32] = []
   for row = 0; row < self.rows; row = row + 1 {
     if predicate.evaluate(self, row) is Yes {

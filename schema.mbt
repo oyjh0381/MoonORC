@@ -33,6 +33,7 @@ pub extend Column with Eq::{equal, not_equal}
 ///|
 pub struct Schema {
   priv columns : Array[Column]
+  priv indexes : Map[String, Int32]
 }
 
 ///|
@@ -44,7 +45,7 @@ pub fn Schema::new(
   if columns.is_empty() || columns.length() > limits.max_columns {
     raise Limit("column count")
   }
-  let names : Map[String, Bool] = Map([])
+  let names : Map[String, Int32] = Map([])
   let mut name_bytes = 0
   for col in columns {
     name_bytes = add(name_bytes, @utf8.encode(col.name).length())
@@ -54,9 +55,9 @@ pub fn Schema::new(
     if col.name == "" || col.name.contains("\u0000") || names.contains(col.name) {
       raise Invalid("empty/duplicate column name", 0)
     }
-    names[col.name] = true
+    names[col.name] = names.length()
   }
-  { columns: columns.copy(), }
+  { columns: columns.copy(), indexes: names, }
 }
 
 ///|
@@ -66,12 +67,10 @@ pub fn Schema::columns(self : Schema) -> Array[Column] {
 
 ///|
 pub fn Schema::index(self : Schema, name : String) -> Int32 raise OrcError {
-  for i = 0; i < self.columns.length(); i = i + 1 {
-    if self.columns[i].name == name {
-      return i
-    }
+  match self.indexes.get(name) {
+    Some(index) => index
+    None => raise Invalid("unknown column: " + name, 0)
   }
-  raise Invalid("unknown column: " + name, 0)
 }
 
 ///|

@@ -36,6 +36,11 @@ fn OrcFile::decode_column(
   }
   let count = present.filter(x => x).length()
   let kind = self.schema.columns[index].kind
+  let proleptic = if kind == Date {
+    number(parse_proto(self.footer, self.limits), 11, 0UL) == 2UL
+  } else {
+    false
+  }
   let encoding = stripe.encodings[id]
   if (kind == Boolean || kind == Byte || kind == Float || kind == Double) &&
     encoding.kind != 0 {
@@ -59,8 +64,7 @@ fn OrcFile::decode_column(
       decode_integers(raw, count, true, encoding.kind).map(bits => {
         let value = bits.reinterpret_as_int64()
         if kind == Date {
-          if value < -141427L &&
-            number(parse_proto(self.footer, self.limits), 11, 0UL) != 2UL {
+          if value < -141427L && !proleptic {
             raise Unsupported("pre-Gregorian date in hybrid calendar file")
           }
           if value < -2147483648L || value > 2147483647L {

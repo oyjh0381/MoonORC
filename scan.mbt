@@ -60,7 +60,7 @@ pub fn OrcFile::scan(
       limits=self.limits,
     ),
   )
-  predicate.validate(self.schema, 0)
+  predicate.validate(self.schema, 0, Ref(self.limits.max_fields))
   let required = names.copy()
   for name in predicate.column_names() {
     if !required.contains(name) {

@@ -13,6 +13,24 @@ fn small_file() -> Bytes raise OrcError {
 }
 
 ///|
+test "shared predicate subtrees cannot trigger exponential validation" {
+  let schema = Schema::new([{ name: "x", kind: Long, }])
+  let batch = Batch::new(schema, [[Integer(1L)]])
+  let mut p : Predicate = Always(true)
+  for i = 0; i < 40; i = i + 1 {
+    p = And(p, p)
+  }
+  assert_true(
+    try {
+      ignore(batch.filter(p))
+      false
+    } catch {
+      _ => true
+    },
+  )
+}
+
+///|
 test "all truncated prefixes fail without partially returned rows" {
   let bytes = small_file()
   for n = 0; n < bytes.length(); n = n + 1 {
