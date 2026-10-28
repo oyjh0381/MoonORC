@@ -1,0 +1,10 @@
+MoonORC
+Copyright 2026 MoonORC contributors.
+
+This product includes independently implemented encodings and a small number
+of published test vectors specified by the Apache ORC format specification,
+Copyright The Apache Software Foundation, licensed under the Apache License 2.0.
+Apache ORC is a trademark of The Apache Software Foundation.
+
+Windows development path adapter files are reused from local MoonH5/MoonSparql
+project tooling under the Apache License 2.0. See THIRD_PARTY.md.
