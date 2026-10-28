@@ -1,7 +1,7 @@
 ///|
 priv struct EncodedColumn { encoding : Int; dictionary_size : Int; streams : Array[(Int, Bytes)] }
 ///| Writer deliberately emits RLEv1 DIRECT, allowed in ORC 0.12 files.
-fn encode_column(kind : Kind, values : Array[Cell]) -> EncodedColumn raise OrcError {
+fn encode_column(kind : Kind, values : Array[Cell]) -> EncodedColumn {
   let streams : Array[(Int, Bytes)] = []
   let present = values.map(x => x != Null)
   if present.any(x => !x) { streams.push((0, encode_bits(present))) }
@@ -18,8 +18,12 @@ fn encode_column(kind : Kind, values : Array[Cell]) -> EncodedColumn raise OrcEr
       streams.push((1, encode_rle1(ints, true)))
     }
     Float | Double => {
-      if kind == Float { raise Unsupported("float32 writing; use double or byte-preserving read") }
-      for v in values { if v is Real(n) { raw.little(n.reinterpret_as_uint64(), 8) } }
+      for v in values {
+        if v is Real(n) {
+          if kind == Float { raw.little(Float::from_double(n).reinterpret_as_uint().to_uint64(), 4) }
+          else { raw.little(n.reinterpret_as_uint64(), 8) }
+        }
+      }
       streams.push((1, raw.finish()))
     }
     String | Binary => {
