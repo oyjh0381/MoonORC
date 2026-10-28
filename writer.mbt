@@ -130,9 +130,14 @@ pub fn write(
     metadata_section.message(1, stripe_stats.finish())
     at += count
   }
+  finish_file(body, batch.schema, stripes, metadata_section.finish(), batch.rows, options, metadata, limits)
+}
+
+///|
+fn finish_file(body : Output, schema : Schema, stripes : Array[StripeInfo], stripe_statistics : Bytes, rows : Int, options : WriteOptions, metadata : Map[String, Bytes], limits : Limits) -> Bytes raise OrcError {
   let content_length = body.length()
   let encoded_metadata = compress(
-    metadata_section.finish(),
+    stripe_statistics,
     options.compression,
     options.block_size,
   )
@@ -143,7 +148,7 @@ pub fn write(
   for stripe in stripes {
     footer.message(3, stripe_message(stripe))
   }
-  for t in batch.schema.types() {
+  for t in schema.types() {
     footer.message(4, t)
   }
   let names = metadata.keys().collect()
@@ -154,7 +159,7 @@ pub fn write(
     m.message(2, metadata.get(name).unwrap())
     footer.message(5, m.finish())
   }
-  footer.field(6, batch.rows.to_uint64())
+  footer.field(6, rows.to_uint64())
   footer.field(8, 0UL)
   footer.field(11, 2UL)
   footer.message(12, b"MoonORC 0.1.0")
