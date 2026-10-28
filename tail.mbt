@@ -18,8 +18,8 @@ pub struct OrcFile {
   compression : Compression
   block_size : Int
   rows : Int
-  footer : Array[Field]
-  metadata : Array[Field]
+  footer : Bytes
+  metadata : Bytes
   limits : Limits
 }
 ///|
@@ -43,7 +43,8 @@ pub fn OrcFile::open(bytes : Bytes, limits? : Limits = Limits::default()) -> Orc
   if footer_len > ps_start - 3 || meta_len > ps_start - 3 - footer_len { raise Invalid("tail section bounds", ps_start) }
   let footer_start = ps_start - footer_len
   let metadata_start = footer_start - meta_len
-  let footer = parse_proto(decompress(sub(bytes, footer_start, footer_len), compression, block_size, limits), limits)
+  let footer_raw = decompress(sub(bytes, footer_start, footer_len), compression, block_size, limits)
+  let footer = parse_proto(footer_raw, limits)
   if one(footer, 10) is Some(_) { raise Unsupported("encrypted ORC file") }
   if number(footer, 1, 3UL) != 3UL { raise Invalid("header length", footer_start) }
   let schema = decode_schema(blobs(footer, 4), limits)
@@ -65,8 +66,9 @@ pub fn OrcFile::open(bytes : Bytes, limits? : Limits = Limits::default()) -> Orc
     stripes.push(stripe)
   }
   if total_rows != rows { raise Invalid("stripe/file row total differs", footer_start) }
-  let metadata = parse_proto(decompress(sub(bytes, metadata_start, meta_len), compression, block_size, limits), limits)
-  { bytes, schema, stripes, compression, block_size, rows, footer, metadata, limits }
+  let metadata = decompress(sub(bytes, metadata_start, meta_len), compression, block_size, limits)
+  ignore(parse_proto(metadata, limits))
+  { bytes, schema, stripes, compression, block_size, rows, footer: footer_raw, metadata, limits }
 }
 ///|
 pub fn OrcFile::schema(self : OrcFile) -> Schema { self.schema }
@@ -79,7 +81,7 @@ pub fn OrcFile::compression(self : OrcFile) -> Compression { self.compression }
 ///|
 pub fn OrcFile::user_metadata(self : OrcFile) -> Map[String, Bytes] raise OrcError {
   let out : Map[String, Bytes] = Map([])
-  for raw in blobs(self.footer, 5) {
+  for raw in blobs(parse_proto(self.footer, self.limits), 5) {
     let fields = parse_proto(raw, self.limits)
     let name = decode_text(blob(fields, 1, b""))
     if out.contains(name) { raise Invalid("duplicate user metadata", 0) }

@@ -35,12 +35,12 @@ fn summarize(values : Array[Cell]) -> Statistics {
   let mut count = 0
   let mut min : Cell? = None
   let mut max : Cell? = None
-  let mut unsafe = false
+  let mut no_bounds = false
   for v in values {
     if v == Null { continue }
     count += 1
-    if v is Blob(_) { unsafe = true }
-    if v is Real(_) { unsafe = true } // Do not emit floating bounds with subtle NaN semantics.
+    if v is Blob(_) { no_bounds = true }
+    if v is Real(_) { no_bounds = true } // Do not emit floating bounds with subtle NaN semantics.
     match min {
       None => { min = Some(v); max = Some(v) }
       Some(low) => {
@@ -49,7 +49,7 @@ fn summarize(values : Array[Cell]) -> Statistics {
       }
     }
   }
-  { count: Some(count), has_null: Some(count != values.length()), minimum: if unsafe { None } else { min }, maximum: if unsafe { None } else { max } }
+  { count: Some(count), has_null: Some(count != values.length()), minimum: if no_bounds { None } else { min }, maximum: if no_bounds { None } else { max } }
 }
 ///|
 fn encode_statistics(values : Array[Cell], kind : Kind) -> Bytes {
@@ -97,7 +97,7 @@ fn decode_statistics(raw : Bytes, kind : Kind, rows : Int, limits : Limits) -> S
 ///|
 pub fn OrcFile::stripe_statistics(self : OrcFile, index : Int) -> Array[Statistics] raise OrcError {
   if index < 0 || index >= self.stripes.length() { raise Invalid("stripe index", index) }
-  let raw = blobs(self.metadata, 1)
+  let raw = blobs(parse_proto(self.metadata, self.limits), 1)
   if raw.is_empty() { return Array::make(self.schema.columns.length(), { count: None, has_null: None, minimum: None, maximum: None }) }
   if raw.length() != self.stripes.length() { raise Invalid("stripe statistics count", 0) }
   let columns = blobs(parse_proto(raw[index], self.limits), 1)

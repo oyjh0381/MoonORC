@@ -1,7 +1,7 @@
 ///| Only wire values, not generated classes. Unknown fields remain bounded.
-enum Wire { Var(UInt64); Data(Bytes); Fixed(UInt64) }
+priv enum Wire { Var(UInt64); Data(Bytes); Fixed }
 ///|
-struct Field { id : Int; wire : Wire }
+priv struct Field { id : Int; wire : Wire }
 ///|
 fn parse_proto(raw : Bytes, limits : Limits) -> Array[Field] raise OrcError {
   if raw.length() > limits.max_decoded_bytes { raise Limit("protobuf bytes") }
@@ -13,9 +13,9 @@ fn parse_proto(raw : Bytes, limits : Limits) -> Array[Field] raise OrcError {
     if tag >> 3 == 0 { raise Invalid("zero protobuf field", c.pos) }
     let wire = match tag & 7 {
       0 => Var(c.varint())
-      1 => Fixed(c.little(8))
+      1 => { ignore(c.take(8)); Fixed }
       2 => { let n = host(c.varint()); Data(c.take(n)) }
-      5 => Fixed(c.little(4))
+      5 => { ignore(c.take(4)); Fixed }
       _ => raise Unsupported("protobuf wire groups/type")
     }
     out.push({ id: tag >> 3, wire })
@@ -55,7 +55,7 @@ fn integers(fields : Array[Field], id : Int) -> Array[Int] raise OrcError {
       match f.wire {
         Var(n) => out.push(host(n))
         Data(b) => { let c = input(b); while c.pos < c.end { out.push(host(c.varint())) } }
-        _ => raise Invalid("expected packed integers", id)
+        Fixed => raise Invalid("expected packed integers", id)
       }
     }
   }
