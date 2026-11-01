@@ -2,7 +2,7 @@
 
 MoonBit 原生、具有明确兼容边界的 ORC 列式记录交换与选择扫描库。核心不绑定 C++/Java；native、JavaScript、Wasm、Wasm-GC 共用一套编码与扫描逻辑。Apache ORC C++ 仅通过 pyorc 用作独立开发测试对照，不是运行依赖。
 
-当前是**本地预发布**：`local/moonorc`、`private = true`，未创建远程仓库或发布包。所有者确定真实账号后才会配置公开模块名与安装地址；现在不要执行 `moon add local/moonorc`。
+模块：`oyjh0381/moonorc@0.1.0`；[GitHub](https://github.com/oyjh0381/MoonORC) · [Mooncakes](https://mooncakes.io/docs/oyjh0381/moonorc)。
 
 ## 解决什么问题
 
@@ -16,7 +16,7 @@ ORC 将可空的表记录拆成带类型的列流和独立 stripe，支持只解
 
 ## 环境与复现
 
-安装 [官方 MoonBit 工具链](https://docs.moonbitlang.com/en/latest/download-and-install.html)，推荐已验证的 `moonc 0.10.16` 或兼容更新版本。在本项目目录执行：
+安装 [官方 MoonBit 工具链](https://docs.moonbitlang.com/en/latest/download-and-install.html)，已验证 `moonc 0.10.16`，CI 固定 compiler/core 0.10.16+b1a0e846e。在本项目目录执行：
 
 ```sh
 moon version --all
@@ -41,7 +41,13 @@ moon run examples/scale --target native --release
 
 ## 最小使用样例
 
-应用包的 `moon.pkg` 导入 `"local/moonorc" @orc`；完整可运行版本见 `examples/log_export`。
+在已有 MoonBit 工程中安装：
+
+```sh
+moon add oyjh0381/moonorc@0.1.0
+```
+
+在使用方 `moon.pkg` 中配置 `import { "oyjh0381/moonorc" @orc, }`；完整可运行版本见 `examples/log_export`。
 
 ```moonbit
 fn main raise {
@@ -117,7 +123,7 @@ python scripts/verify_repository.py
 
 pyorc 对照脚本比较 Apache ORC→MoonORC 读取、MoonORC→Apache ORC 读取、重新编码、空值/类型、64位边界和拒绝覆盖等行为。`fixtures/*.orc` 仅含项目自造数据；可用 `scripts/interop.py generate fixtures` 生成，再运行 `scripts/embed_fixtures.py` 与 `moon fmt`。嵌入字节是生成**数据**，不计入有效代码行数。
 
-GitHub Actions 已配置 check/build/test 四后端、fmt/API 一致性、三个场景、规模负载和独立互操作。远程运行成功记录只有在公开推送后才能确认；本地通过不是正式赛事验收结论。
+[Linux/Windows GitHub Actions](https://github.com/oyjh0381/MoonORC/actions) 覆盖 check/build/test 四后端、fmt/API 一致性、五个业务/规模/新增场景、独立互操作及打包卫生；工程检查不等于正式赛事验收。
 
 ## 资源与性能
 
@@ -129,9 +135,9 @@ GitHub Actions 已配置 check/build/test 四后端、fmt/API 一致性、三个
 
 依据 [Apache ORC 官方规范](https://orc.apache.org/specification/ORCv1/) 独立实现；Apache-2.0，详见 [THIRD_PARTY.md](THIRD_PARTY.md)、LICENSE 和 NOTICE。使用 AI 辅助开发，行为由标准样例、属性测试、跨后端测试和独立工具验证；这不替代使用者对实际数据和风险的检验。
 
-领域术语在 `CONTEXT.md`，边界决策在 `docs/adr/`，公共 API 在 `pkg.generated.mbti`。后续优先修复真实兼容缺陷；新增 codec 或嵌套类型必须带独立 fixture 后再扩展声明。申报书、审查、AI 辅助和汇总材料留在 `_local/` 或仓库外，不进入 Git 或发布包。
+领域术语在 `CONTEXT.md`，边界决策在 `docs/adr/`，公共 API 在 `pkg.generated.mbti`。后续优先修复真实兼容缺陷；新增 codec 或嵌套类型必须带独立 fixture 后再扩展声明。申报书可保存在项目本地文件夹；申报书、审查、AI 辅助和汇总材料经忽略及历史/包检查排除，不进入 Git 或发行包。
 
 
 ## 十一月新增功能
 
-**消费方字段契约检查**（`Schema::check_contract`）；**保留源文件行号的选择扫描**（`Scanner::next_positioned`）。详见[功能、用途和边界](docs/NOVEMBER_FEATURES.md)，运行 `moon run examples/november --target native --deny-warn`。当前仍为本地未发布源码，不提供虚构安装地址。
+**消费方字段契约检查**（`Schema::check_contract`）；**保留源文件行号的选择扫描**（`Scanner::next_positioned`）。详见[功能、用途和边界](docs/NOVEMBER_FEATURES.md)，运行 `moon run examples/november --target native --deny-warn`。功能包含于0.1.0，安装方式见上文。

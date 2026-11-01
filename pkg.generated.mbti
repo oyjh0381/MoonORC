@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "local/moonorc"
+package "oyjh0381/moonorc"
 
 import {
   "moonbitlang/core/debug",

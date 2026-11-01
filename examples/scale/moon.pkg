@@ -1,5 +1,5 @@
 import {
-  "local/moonorc" @orc,
+  "oyjh0381/moonorc" @orc,
 }
 
 pkgtype(kind: "executable")

@@ -1,5 +1,5 @@
 import {
-  "local/moonorc" @orc,
+  "oyjh0381/moonorc" @orc,
   "moonbitlang/core/env",
   "moonbitlang/async",
   "moonbitlang/async/fs",

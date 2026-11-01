@@ -1,12 +1,12 @@
-name = "local/moonorc"
+name = "oyjh0381/moonorc"
 
 version = "0.1.0"
-
-private = true
 
 license = "Apache-2.0"
 
 readme = "README.md"
+
+repository = "https://github.com/oyjh0381/MoonORC"
 
 description = "Bounded ORC columnar record interchange and selective stripe scanning"
 
