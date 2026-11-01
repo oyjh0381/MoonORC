@@ -120,6 +120,11 @@ pub fn OrcFile::stripe_statistics(Self, Int32) -> Array[Statistics] raise OrcErr
 pub fn OrcFile::stripes(Self) -> Array[StripeInfo]
 pub fn OrcFile::user_metadata(Self) -> Map[String, Bytes] raise OrcError
 
+pub(all) struct PositionedBatch {
+  batch : Batch
+  source_rows : Array[Int32]
+}
+
 pub(all) enum Predicate {
   Always(Bool)
   Compare(String, Comparison, Cell)
@@ -155,13 +160,22 @@ pub struct Scanner {
 }
 pub fn Scanner::metrics(Self) -> ScanMetrics
 pub fn Scanner::next(Self) -> Batch? raise OrcError
+pub fn Scanner::next_positioned(Self) -> PositionedBatch? raise OrcError
 
 pub struct Schema {
   // private fields
 }
+pub fn Schema::check_contract(Self, Self) -> SchemaCompatibility
 pub fn Schema::columns(Self) -> Array[Column]
 pub fn Schema::index(Self, String) -> Int32 raise OrcError
 pub fn Schema::new(Array[Column], limits? : Limits) -> Self raise OrcError
+
+pub(all) struct SchemaCompatibility {
+  missing : Array[String]
+  incompatible : Array[String]
+  extra : Array[String]
+}
+pub fn SchemaCompatibility::compatible(Self) -> Bool
 
 pub(all) struct Statistics {
   count : Int32?

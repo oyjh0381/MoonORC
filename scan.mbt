@@ -25,6 +25,7 @@ pub struct Scanner {
   priv mut source_position : Int32
   priv mut stripe_index : Int32
   priv mut pending : Batch?
+  priv mut pending_positions : Array[Int32]
   priv mut pending_row : Int32
   priv mut metrics : ScanMetrics
   priv mut failure : OrcError?
@@ -79,6 +80,7 @@ pub fn OrcFile::scan(
     source_position: 0,
     stripe_index: 0,
     pending: None,
+    pending_positions: [],
     pending_row: 0,
     failure: None,
     metrics: {
@@ -96,11 +98,13 @@ pub fn Scanner::metrics(self : Scanner) -> ScanMetrics {
 }
 
 ///|
-fn Scanner::advance(self : Scanner) -> Batch? raise OrcError {
+fn Scanner::advance(self : Scanner) -> PositionedBatch? raise OrcError {
   while true {
     if self.pending is Some(batch) && self.pending_row < batch.rows {
       let count = imin(self.batch_rows, batch.rows - self.pending_row)
       let slice = batch.slice(self.pending_row, count)
+      let positions = self.pending_positions[self.pending_row:self.pending_row +
+      count].to_owned()
       self.pending_row += count
       let schema = Schema::new(
         self.names.map(n => slice.schema.columns[slice.schema.index(n)]),
@@ -115,7 +119,7 @@ fn Scanner::advance(self : Scanner) -> Batch? raise OrcError {
         ..self.metrics,
         rows_returned: add(self.metrics.rows_returned, count),
       }
-      return Some(result)
+      return Some({ batch: result, source_rows: positions, })
     }
     self.pending = None
     if self.stripe_index >= self.file.stripes.length() {
@@ -158,11 +162,16 @@ fn Scanner::advance(self : Scanner) -> Batch? raise OrcError {
       0
     }
     let end = imin(rows, self.range_end - stripe_start)
-    self.pending = Some(
-      batch
-      .slice(start, end - start)
-      .filter(self.predicate, limits=self.file.limits),
-    )
+    let selected : Array[Int32] = []
+    let positions : Array[Int32] = []
+    for row = start; row < end; row = row + 1 {
+      if self.predicate.evaluate(batch, row) is Yes {
+        selected.push(row)
+        positions.push(stripe_start + row)
+      }
+    }
+    self.pending = Some(batch.take(selected, limits=self.file.limits))
+    self.pending_positions = positions
     self.pending_row = 0
   } nobreak {
     None
@@ -174,6 +183,20 @@ fn Scanner::advance(self : Scanner) -> Batch? raise OrcError {
 ///|
 /// silently advancing past the malformed stripe and returning incomplete data.
 pub fn Scanner::next(self : Scanner) -> Batch? raise OrcError {
+  self.next_positioned().map(p => p.batch)
+}
+
+///|
+pub(all) struct PositionedBatch {
+  batch : Batch
+  source_rows : Array[Int32]
+}
+
+///|
+/// Zero-based source-file row identities survive projection, filtering and batching.
+pub fn Scanner::next_positioned(
+  self : Scanner,
+) -> PositionedBatch? raise OrcError {
   if self.failure is Some(error) {
     raise error
   }

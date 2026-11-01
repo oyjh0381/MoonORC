@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — 2026-11-01
+
+- 消费方字段契约检查：Schema::check_contract
+- 保留源文件行号的选择扫描：Scanner::next_positioned
+- 增加边界回归、可运行集成示例和CI步骤；未公开发布。
+
 ## 0.1.0 — local prerelease
 
 - Independent native ORC flat record encoding, nullable columns and multi-stripe files.

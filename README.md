@@ -130,3 +130,8 @@ GitHub Actions 已配置 check/build/test 四后端、fmt/API 一致性、三个
 依据 [Apache ORC 官方规范](https://orc.apache.org/specification/ORCv1/) 独立实现；Apache-2.0，详见 [THIRD_PARTY.md](THIRD_PARTY.md)、LICENSE 和 NOTICE。使用 AI 辅助开发，行为由标准样例、属性测试、跨后端测试和独立工具验证；这不替代使用者对实际数据和风险的检验。
 
 领域术语在 `CONTEXT.md`，边界决策在 `docs/adr/`，公共 API 在 `pkg.generated.mbti`。后续优先修复真实兼容缺陷；新增 codec 或嵌套类型必须带独立 fixture 后再扩展声明。申报书、审查、AI 辅助和汇总材料留在 `_local/` 或仓库外，不进入 Git 或发布包。
+
+
+## 十一月新增功能
+
+**消费方字段契约检查**（`Schema::check_contract`）；**保留源文件行号的选择扫描**（`Scanner::next_positioned`）。详见[功能、用途和边界](docs/NOVEMBER_FEATURES.md)，运行 `moon run examples/november --target native --deny-warn`。当前仍为本地未发布源码，不提供虚构安装地址。
