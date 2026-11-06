@@ -61,6 +61,7 @@ jobs:
           moon run examples/offline_analysis --target js --deny-warn
           moon run examples/scale --target native --release --deny-warn
           moon run examples/november --target native --deny-warn
+          moon run examples/expansion --target native --deny-warn
       - name: Independent Apache ORC oracle
         run: |
           python -m pip install -r scripts/requirements-interop.txt

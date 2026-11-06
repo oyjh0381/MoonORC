@@ -141,3 +141,10 @@ pyorc 对照脚本比较 Apache ORC→MoonORC 读取、MoonORC→Apache ORC 读�
 ## 十一月新增功能
 
 **消费方字段契约检查**（`Schema::check_contract`）；**保留源文件行号的选择扫描**（`Scanner::next_positioned`）。详见[功能、用途和边界](docs/NOVEMBER_FEATURES.md)，运行 `moon run examples/november --target native --deny-warn`。功能包含于0.1.0，安装方式见上文。
+
+
+## 本地开发增量（未发布）
+
+新增 **稳定多列类型排序**、**精确类型键稳定去重**，用途、限制和复杂度见 [功能文档](docs/EXPANSION_20261106.md)。
+从本仓库源码运行 `moon run examples/expansion --target native --deny-warn`。
+本节 API 尚未包含在已发布的 0.1.0 中。

@@ -1,0 +1,5 @@
+import {
+  "oyjh0381/moonorc" @orc,
+}
+
+pkgtype(kind: "executable")

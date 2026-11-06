@@ -34,7 +34,9 @@ pub fn Batch::rename(Self, Map[String, String], limits? : Limits) -> Self raise 
 pub fn Batch::row_count(Self) -> Int32
 pub fn Batch::schema(Self) -> Schema
 pub fn Batch::slice(Self, Int32, Int32) -> Self raise OrcError
+pub fn Batch::sort_rows(Self, Array[SortKey], limits? : Limits) -> Self raise OrcError
 pub fn Batch::take(Self, Array[Int32], limits? : Limits) -> Self raise OrcError
+pub fn Batch::unique_rows(Self, Array[String], limits? : Limits) -> Self raise OrcError
 
 pub(all) enum Cell {
   Null
@@ -176,6 +178,12 @@ pub(all) struct SchemaCompatibility {
   extra : Array[String]
 }
 pub fn SchemaCompatibility::compatible(Self) -> Bool
+
+pub(all) struct SortKey {
+  column : String
+  descending : Bool
+  nulls_first : Bool
+}
 
 pub(all) struct Statistics {
   count : Int32?
