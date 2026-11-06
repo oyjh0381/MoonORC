@@ -2,6 +2,10 @@
 
 ## Unreleased — 2026-11-06
 
+- Prioritize foundational ORC format coverage: DECIMAL(1..38, scale), CHAR and VARCHAR parameterized schema and bidirectional codecs.
+- Exact bounded decimal varints/scale RLE, Unicode code-point lengths, canonical CHAR API/padded wire representation and padding budgets.
+- Add independent Apache ORC scalar type comparisons, malformed/boundary tests, runnable format example and staged standard-type roadmap.
+
 - 稳定多列类型排序。
 - 精确类型键稳定去重。
 - 增加回归测试、独立可运行示例与 CI 示例步骤；详见 docs/EXPANSION_20261106.md。

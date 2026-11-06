@@ -7,6 +7,7 @@ pub(all) enum Cell {
   Text(String)
   Blob(Bytes)
   Days(Int32)
+  DecimalNumber(DecimalValue)
 } derive(Debug, Eq)
 
 ///|
@@ -37,6 +38,13 @@ fn Cell::validate(self : Cell, kind : Kind) -> Unit raise OrcError {
       n.is_inf() ||
       (n >= -3.4028234663852886e38 && n <= 3.4028234663852886e38)
     (Text(_), String) => true
+    (Text(s), Varchar(n)) => s.to_array().length() <= n
+    (Text(s), Char(n)) =>
+      s.to_array().length() <= n && (s.is_empty() || s[s.length() - 1] != ' ')
+    (DecimalNumber(d), Decimal(p, s)) =>
+      d.scale == s &&
+      d.coefficient.length() - (if d.coefficient[0] == '-' { 1 } else { 0 }) <=
+      p
     (Blob(_), Binary) => true
     (Days(_), Date) => true
     _ => false
@@ -68,7 +76,13 @@ pub fn Batch::new(
     for value in columns[i] {
       value.validate(schema.columns[i].kind)
       match value {
-        Text(s) => bytes = add(bytes, @utf8.encode(s).length())
+        DecimalNumber(d) => bytes = add(bytes, d.coefficient.length())
+        Text(s) => {
+          bytes = add(bytes, @utf8.encode(s).length())
+          if schema.columns[i].kind is Char(n) {
+            bytes = add(bytes, n - s.to_array().length())
+          }
+        }
         Blob(b) => bytes = add(bytes, b.length())
         _ => ()
       }
@@ -130,7 +144,7 @@ test "nullable batch is immutable and rejects ragged or mistyped columns" {
     { name: "s", kind: String, },
   ])
   let source : Array[Cell] = [Integer(1L), Null]
-  let batch = Batch::new(schema, [source, [Text(""), Text("你好")]])
+  let batch = Batch::new(schema, [source, [Text(""), Text("浣犲ソ")]])
   source[0] = Integer(9L)
   assert_eq(batch.cell(0, "x"), Integer(1L))
   assert_eq(batch.slice(1, 1).cell(0, "x"), Null)

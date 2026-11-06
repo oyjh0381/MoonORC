@@ -10,6 +10,9 @@ pub(all) enum Kind {
   String
   Binary
   Date
+  Decimal(Int32, Int32)
+  Varchar(Int32)
+  Char(Int32)
 } derive(Debug, Eq)
 
 ///|
@@ -48,6 +51,14 @@ pub fn Schema::new(
   let names : Map[String, Int32] = Map([])
   let mut name_bytes = 0
   for col in columns {
+    match col.kind {
+      Decimal(p, s) => decimal_kind(p, s)
+      Char(n) | Varchar(n) =>
+        if n < 1 || n > 65535 {
+          raise Invalid("character length must be 1..65535", 0)
+        }
+      _ => ()
+    }
     name_bytes = add(name_bytes, @utf8.encode(col.name).length())
     if name_bytes > limits.max_decoded_bytes {
       raise Limit("schema name bytes")
@@ -86,6 +97,9 @@ fn Kind::code(self : Kind) -> Int32 {
     String => 7
     Binary => 8
     Date => 15
+    Decimal(_, _) => 14
+    Varchar(_) => 16
+    Char(_) => 17
   }
 }
 
@@ -102,7 +116,7 @@ fn kind_from(code : Int32) -> Kind raise OrcError {
     7 => String
     8 => Binary
     15 => Date
-    _ => raise Unsupported("nested/decimal/timestamp/char column type")
+    _ => raise Unsupported("nested or timestamp column type")
   }
 }
 
@@ -122,6 +136,14 @@ fn Schema::types(self : Schema) -> Array[Bytes] {
   for column in self.columns {
     let t = output()
     t.field(1, column.kind.code().to_uint64())
+    match column.kind {
+      Decimal(p, s) => {
+        t.field(5, p.to_uint64())
+        t.field(6, s.to_uint64())
+      }
+      Char(n) | Varchar(n) => t.field(4, n.to_uint64())
+      _ => ()
+    }
     types.push(t.finish())
   }
   types
@@ -152,7 +174,12 @@ fn decode_schema(raws : Array[Bytes], limits : Limits) -> Schema raise OrcError 
     }
     cols.push({
       name: decode_text(names[i]),
-      kind: kind_from(host(number(t, 1, 255UL))),
+      kind: match host(number(t, 1, 255UL)) {
+        14 => Decimal(host(number(t, 5, 38UL)), host(number(t, 6, 6UL)))
+        16 => Varchar(host(number(t, 4, 0UL)))
+        17 => Char(host(number(t, 4, 0UL)))
+        n => kind_from(n)
+      },
     })
   }
   Schema::new(cols, limits~)

@@ -79,6 +79,7 @@ pub fn Batch::sort_rows(
 ///|
 fn exact_cell_key(cell : Cell, maximum : Int32) -> String raise OrcError {
   match cell {
+    DecimalNumber(d) => "M" + d.scale.to_string() + ":" + d.coefficient
     Null => "N"
     Bool(v) => if v { "B1" } else { "B0" }
     Integer(v) => "I" + v.to_string()

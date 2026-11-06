@@ -46,6 +46,7 @@ pub(all) enum Cell {
   Text(String)
   Blob(Bytes)
   Days(Int32)
+  DecimalNumber(DecimalValue)
 } derive(Eq, @debug.Debug)
 pub fn Cell::equal(Self, Self) -> Bool
 pub fn Cell::not_equal(Self, Self) -> Bool
@@ -78,6 +79,15 @@ pub fn Compression::equal(Self, Self) -> Bool
 pub fn Compression::not_equal(Self, Self) -> Bool
 pub fn Compression::to_repr(Self) -> @debug.Repr
 
+pub struct DecimalValue {
+  // private fields
+} derive(Eq, @debug.Debug)
+pub fn DecimalValue::equal(Self, Self) -> Bool
+pub fn DecimalValue::not_equal(Self, Self) -> Bool
+pub fn DecimalValue::parse(String, Int32, Int32) -> Self raise OrcError
+pub fn DecimalValue::to_repr(Self) -> @debug.Repr
+pub fn DecimalValue::to_string(Self) -> String
+
 pub(all) enum Kind {
   Boolean
   Byte
@@ -89,6 +99,9 @@ pub(all) enum Kind {
   String
   Binary
   Date
+  Decimal(Int32, Int32)
+  Varchar(Int32)
+  Char(Int32)
 } derive(Eq, @debug.Debug)
 pub fn Kind::equal(Self, Self) -> Bool
 pub fn Kind::not_equal(Self, Self) -> Bool

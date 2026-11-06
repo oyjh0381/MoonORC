@@ -6,6 +6,18 @@ priv struct EncodedColumn {
 }
 
 ///|
+fn text_column_bytes(s : String, kind : Kind) -> Bytes {
+  let b = StringBuilder()
+  b.write_string(s)
+  if kind is Char(n) {
+    for i = s.to_array().length(); i < n; i = i + 1 {
+      b.write_string(" ")
+    }
+  }
+  @utf8.encode(b.to_string())
+}
+
+///|
 /// Writer deliberately emits RLEv1 DIRECT, allowed in ORC 0.12 files.
 fn encode_column(kind : Kind, values : Array[Cell]) -> EncodedColumn {
   let streams : Array[(Int32, Bytes)] = []
@@ -14,7 +26,8 @@ fn encode_column(kind : Kind, values : Array[Cell]) -> EncodedColumn {
     streams.push((0, encode_bits(present)))
   }
   let values = values.filter(x => x != Null)
-  if kind == String && values.length() >= 4 {
+  if (kind == String || kind is Char(_) || kind is Varchar(_)) &&
+    values.length() >= 4 {
     let unique : Map[String, Bool] = Map([])
     for v in values {
       if v is Text(s) {
@@ -28,7 +41,7 @@ fn encode_column(kind : Kind, values : Array[Cell]) -> EncodedColumn {
       let data = output()
       let lengths : Array[UInt64] = []
       for i = 0; i < dictionary.length(); i = i + 1 {
-        let raw = @utf8.encode(dictionary[i])
+        let raw = text_column_bytes(dictionary[i], kind)
         ids[dictionary[i]] = i
         lengths.push(raw.length().to_uint64())
         data.raw(raw)
@@ -94,11 +107,28 @@ fn encode_column(kind : Kind, values : Array[Cell]) -> EncodedColumn {
       }
       streams.push((1, raw.finish()))
     }
-    String | Binary => {
+    Decimal(_, scale) => {
+      for v in values {
+        if v is DecimalNumber(d) {
+          encode_decimal(d, raw)
+        }
+      }
+      streams.push((1, raw.finish()))
+      streams.push(
+        (
+          5,
+          encode_rle1(
+            values.map(_ => scale.to_int64().reinterpret_as_uint64()),
+            true,
+          ),
+        ),
+      )
+    }
+    String | Binary | Char(_) | Varchar(_) => {
       let lengths : Array[UInt64] = []
       for v in values {
         let bytes = match v {
-          Text(s) => @utf8.encode(s)
+          Text(s) => text_column_bytes(s, kind)
           Blob(b) => b
           _ => b""
         }

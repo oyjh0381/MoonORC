@@ -32,6 +32,7 @@ fn utf8_compare(a : String, b : String) -> Int32 {
 /// None means incomparable (including NaN), never an arbitrary ordering.
 fn compare_cell(a : Cell, b : Cell) -> Int32? {
   match (a, b) {
+    (DecimalNumber(a), DecimalNumber(b)) => Some(compare_decimal(a, b))
     (Integer(a), Integer(b)) => Some(a.compare(b))
     (Days(a), Days(b)) => Some(a.compare(b))
     (Text(a), Text(b)) => Some(utf8_compare(a, b))
@@ -55,6 +56,9 @@ fn summarize(values : Array[Cell]) -> Statistics {
     }
     count += 1
     if v is Blob(_) {
+      no_bounds = true
+    }
+    if v is DecimalNumber(_) {
       no_bounds = true
     }
     if v is Real(_) {
@@ -97,7 +101,7 @@ fn encode_statistics(values : Array[Cell], kind : Kind) -> Bytes {
   let b = output()
   b.field(1, s.count.unwrap().to_uint64())
   b.field(10, if s.has_null == Some(true) { 1UL } else { 0UL })
-  if s.minimum is Some(low) && s.maximum is Some(high) {
+  if s.minimum is Some(low) && s.maximum is Some(high) && !(kind is Char(_)) {
     let bounds = output()
     match (low, high, kind) {
       (Integer(a), Integer(z), _) => {
@@ -144,7 +148,7 @@ fn decode_statistics(
   }
   let bounds_id = match kind {
     Byte | Short | Int | Long => 2
-    String => 4
+    String | Varchar(_) => 4
     Date => 7
     _ => 0
   }

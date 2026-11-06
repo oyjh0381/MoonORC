@@ -1,6 +1,7 @@
 ///|
 fn cell_json(cell : @orc.Cell) -> Json {
   match cell {
+    DecimalNumber(d) => Json::string(d.to_string())
     Null => Json::null()
     Bool(x) => Json::boolean(x)
     Integer(n) => Json::string(n.to_string())
@@ -56,7 +57,36 @@ async fn run() -> Unit {
   if args.length() != 3 {
     raise Failure("usage: moonorc read FILE.orc | demo NEW.orc")
   }
-  if args[1] == "demo" {
+  if args[1] == "demo-format" {
+    let schema = @orc.Schema::new([
+      { name: "amount", kind: Decimal(38, 8), },
+      { name: "code", kind: Varchar(4), },
+      { name: "tag", kind: Char(3), },
+    ])
+    let batch = @orc.Batch::new(schema, [
+      [
+        DecimalNumber(
+          @orc.DecimalValue::parse(
+            "999999999999999999999999999999.99999999", 38, 8,
+          ),
+        ),
+        DecimalNumber(@orc.DecimalValue::parse("-0.00000001", 38, 8)),
+        Null,
+      ],
+      [Text("中😀"), Text(""), Null],
+      [Text("ABC"), Text("中"), Null],
+    ])
+    @fs.write_file(
+      args[2][:],
+      @orc.write(batch, options={
+        ..@orc.WriteOptions::default(),
+        compression: Zlib,
+        stripe_rows: 2,
+      }),
+      create_mode=CreateNew,
+    )
+    println("created decimal38 and bounded text ORC file")
+  } else if args[1] == "demo" {
     let schema = @orc.Schema::new([
       { name: "id", kind: Long, },
       { name: "label", kind: String, },

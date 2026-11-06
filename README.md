@@ -9,7 +9,7 @@ MoonBit 原生、具有明确兼容边界的 ORC 列式记录交换与选择扫�
 ORC 将可空的表记录拆成带类型的列流和独立 stripe，支持只解码需要的字段，并可利用可信统计跳过不可能匹配的 stripe。本项目补充这种真实格式的原生读写/扫描能力，而非重造 SQL、DataFrame 或纯压缩库。
 
 - 服务日志/应用事件：保存稳定类型和空值，分析时只读请求标识、状态码等需要的字段。
-- 数据管道/业务导出：按名字对齐不同版本的记录字段，保留缺失字段为空，交给已有 ORC 工具消费。
+- 数据管道/业务导出：保留金额的精确 decimal 精度与小数位、业务编码的 CHAR/VARCHAR 长度和空值，交给已有 ORC 工具消费（新增类型需使用当前源码）。
 - 离线分析/Web/WASM：在不装 C++ 运行时的环境中筛选日期、分组标签和数值列，再交给上层统计或可视化组件。
 
 它与 HDF5 多维数组/区域访问、SDMX 结构化统计交换、外部排序和 Arrow 内存布局都不是同一核心能力；也不声称替代这些组件。
@@ -70,6 +70,27 @@ fn main raise {
 
 整数 `Cell::Integer` 保留完整 Int64，不经过 Double。日期 `Days` 是 Unix epoch 起的天数，不是时间戳；Float 字段按 IEEE32 舍入，Double 按 IEEE64，负零和 Double NaN payload 在核心字节交换中保留。`Null` 不等于空字符串、空二进制或零。
 
+## 基础格式优先：本地新增标准类型（未发布）
+
+本轮开发重点为标准类型和字节格式覆盖；完整实装/计划矩阵及验收条件见 [TYPE_COVERAGE](docs/TYPE_COVERAGE.md)。
+
+- **DECIMAL(p,s)**：precision 1..38、scale 0..precision；精确系数与 scale 编解码，支持负值、38 位极值、null 和原始 schema 参数；不经过 Double，不静默舍入。
+- **VARCHAR(n)**：保留长度参数，按 Unicode 字符数验证，保留尾空格，超长拒绝。
+- **CHAR(n)**：API 使用无尾 ASCII 空格的规范值；文件层按声明字符数补空格，解码移除填充。类型长度与填充膨胀受预算检查。
+- 原有整数、浮点、布尔、字符串、二进制和日期继续可用。TIMESTAMP/INSTANT、嵌套 STRUCT/LIST/MAP/UNION 有分阶段路线及独立互操作门槛，当前仍明确拒绝。
+
+```moonbit
+let schema = @orc.Schema::new([{ name: "amount", kind: Decimal(38, 8) }])
+let value = @orc.DecimalValue::parse("123456789012345678901234567890.12345678", 38, 8)
+let batch = @orc.Batch::new(schema, [[DecimalNumber(value), Null]])
+let result = @orc.OrcFile::open(@orc.write(batch)).read_stripe(0)
+assert_eq(result.column("amount"), batch.column("amount"))
+```
+
+运行 `moon run examples/format_types --target native --deny-warn`；
+独立 Apache ORC 对照为 `python scripts/interop_types.py _build/native/debug/build/cmd/main/main.exe`。
+已发布 0.1.0 不含这些新增类型，需从当前本地源码运行。
+
 ## 接口与功能
 
 - `Schema`、`Batch`：验证平坦可空类型列，拒绝空/重复字段名、类型不符和不同列行数；可变数组通过防御性复制隔离。
@@ -91,7 +112,7 @@ fn main raise {
 | 方面 | 已实现 | 明确不支持/不承诺 |
 | --- | --- | --- |
 | 文件 | ORC 0.11/0.12 入口、protobuf tail/stripe、用户元数据 | 加密、活动文件恢复、事务/ACID、任意未来版本 |
-| Schema | flat struct：boolean、byte/short/int/long、float/double、string、binary、date | nested/list/map/union、decimal、timestamp、char/varchar |
+| Schema | flat struct：boolean、byte/short/int/long、float/double、string、binary、date | nested/list/map/union、timestamp；decimal/char/varchar 已在本地增量实现，见下文 |
 | 编码读取 | byte/boolean RLE、整数 RLEv1、RLEv2 四模式、直接与字典字符串 | 自定义列编码、未验证类型变体 |
 | 压缩 | NONE、ZLIB（ORC raw DEFLATE 分块） | SNAPPY/LZO/LZ4/ZSTD |
 | 写出 | ORC 0.12、DIRECT/RLEv1、重复字符串字典、nullable、多 stripe、NONE/ZLIB、用户元数据和 stripe 统计 | row-index/bloom 写出、加密、其他 codec |

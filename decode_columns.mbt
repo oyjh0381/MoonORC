@@ -91,7 +91,28 @@ fn OrcFile::decode_column(
         )
       })
     }
-    String | Binary => {
+    Decimal(precision, scale) => {
+      if encoding.kind != 0 && encoding.kind != 2 {
+        raise Unsupported("decimal encoding")
+      }
+      let scales = decode_integers(
+        self.required_stream(stripe, id, 5, count),
+        count,
+        true,
+        encoding.kind,
+      )
+      let c = input(raw)
+      let result = scales.map(s => {
+        DecimalNumber(
+          decode_decimal(c, s.reinterpret_as_int64(), precision, scale),
+        )
+      })
+      if c.pos != c.end {
+        raise Invalid("trailing decimal bytes", c.pos)
+      }
+      result
+    }
+    String | Binary | Char(_) | Varchar(_) => {
       let dictionary = encoding.kind == 1 || encoding.kind == 3
       if dictionary && kind == Binary {
         raise Unsupported("binary dictionary")
@@ -112,8 +133,17 @@ fn OrcFile::decode_column(
         raw
       }
       let entries = split_blobs(contents, lengths, self.limits).map(b => {
-        if kind == String {
-          Text(decode_text(b))
+        if kind != Binary {
+          let text = decode_text(b)
+          if kind is Char(_) {
+            let mut end = text.length()
+            while end > 0 && text[end - 1] == ' ' {
+              end -= 1
+            }
+            Text(text[:end].to_owned())
+          } else {
+            Text(text)
+          }
         } else {
           Blob(b)
         }
