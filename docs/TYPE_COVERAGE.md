@@ -1,6 +1,6 @@
 # Standard ORC type coverage and implementation sequence
 
-Local unreleased development, 2026-11-06. Released 0.1.0 does not contain the
+Version 0.2.0, 2026-11-06. Earlier 0.1.0 does not contain the
 new DECIMAL/CHAR/VARCHAR APIs. This matrix describes actual capabilities, not
 full ORC compliance. Source: [Apache ORC v1 specification](https://orc.apache.org/specification/ORCv1/).
 

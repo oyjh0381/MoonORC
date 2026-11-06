@@ -2,14 +2,14 @@
 
 MoonBit 原生、具有明确兼容边界的 ORC 列式记录交换与选择扫描库。核心不绑定 C++/Java；native、JavaScript、Wasm、Wasm-GC 共用一套编码与扫描逻辑。Apache ORC C++ 仅通过 pyorc 用作独立开发测试对照，不是运行依赖。
 
-模块：`oyjh0381/moonorc@0.1.0`；[GitHub](https://github.com/oyjh0381/MoonORC) · [Mooncakes](https://mooncakes.io/docs/oyjh0381/moonorc)。
+模块：`oyjh0381/moonorc@0.2.0`；[GitHub](https://github.com/oyjh0381/MoonORC) · [Mooncakes](https://mooncakes.io/docs/oyjh0381/moonorc)。
 
 ## 解决什么问题
 
 ORC 将可空的表记录拆成带类型的列流和独立 stripe，支持只解码需要的字段，并可利用可信统计跳过不可能匹配的 stripe。本项目补充这种真实格式的原生读写/扫描能力，而非重造 SQL、DataFrame 或纯压缩库。
 
 - 服务日志/应用事件：保存稳定类型和空值，分析时只读请求标识、状态码等需要的字段。
-- 数据管道/业务导出：保留金额的精确 decimal 精度与小数位、业务编码的 CHAR/VARCHAR 长度和空值，交给已有 ORC 工具消费（新增类型需使用当前源码）。
+- 数据管道/业务导出：保留金额的精确 decimal 精度与小数位、业务编码的 CHAR/VARCHAR 长度和空值，交给已有 ORC 工具消费（0.2.0 新增类型）。
 - 离线分析/Web/WASM：在不装 C++ 运行时的环境中筛选日期、分组标签和数值列，再交给上层统计或可视化组件。
 
 它与 HDF5 多维数组/区域访问、SDMX 结构化统计交换、外部排序和 Arrow 内存布局都不是同一核心能力；也不声称替代这些组件。
@@ -44,7 +44,7 @@ moon run examples/scale --target native --release
 在已有 MoonBit 工程中安装：
 
 ```sh
-moon add oyjh0381/moonorc@0.1.0
+moon add oyjh0381/moonorc@0.2.0
 ```
 
 在使用方 `moon.pkg` 中配置 `import { "oyjh0381/moonorc" @orc, }`；完整可运行版本见 `examples/log_export`。
@@ -70,7 +70,7 @@ fn main raise {
 
 整数 `Cell::Integer` 保留完整 Int64，不经过 Double。日期 `Days` 是 Unix epoch 起的天数，不是时间戳；Float 字段按 IEEE32 舍入，Double 按 IEEE64，负零和 Double NaN payload 在核心字节交换中保留。`Null` 不等于空字符串、空二进制或零。
 
-## 基础格式优先：本地新增标准类型（未发布）
+## 基础格式优先：0.2.0 新增标准类型
 
 本轮开发重点为标准类型和字节格式覆盖；完整实装/计划矩阵及验收条件见 [TYPE_COVERAGE](docs/TYPE_COVERAGE.md)。
 
@@ -89,7 +89,7 @@ assert_eq(result.column("amount"), batch.column("amount"))
 
 运行 `moon run examples/format_types --target native --deny-warn`；
 独立 Apache ORC 对照为 `python scripts/interop_types.py _build/native/debug/build/cmd/main/main.exe`。
-已发布 0.1.0 不含这些新增类型，需从当前本地源码运行。
+0.1.0 不含这些新增类型，请安装 0.2.0 或使用相应版本源码。
 
 ## 接口与功能
 
@@ -112,7 +112,7 @@ assert_eq(result.column("amount"), batch.column("amount"))
 | 方面 | 已实现 | 明确不支持/不承诺 |
 | --- | --- | --- |
 | 文件 | ORC 0.11/0.12 入口、protobuf tail/stripe、用户元数据 | 加密、活动文件恢复、事务/ACID、任意未来版本 |
-| Schema | flat struct：boolean、byte/short/int/long、float/double、string、binary、date | nested/list/map/union、timestamp；decimal/char/varchar 已在本地增量实现，见下文 |
+| Schema | flat struct：boolean、byte/short/int/long、float/double、string、binary、date、decimal(p,s)、char(n)、varchar(n) | nested/list/map/union、timestamp；参数及精度边界见类型矩阵 |
 | 编码读取 | byte/boolean RLE、整数 RLEv1、RLEv2 四模式、直接与字典字符串 | 自定义列编码、未验证类型变体 |
 | 压缩 | NONE、ZLIB（ORC raw DEFLATE 分块） | SNAPPY/LZO/LZ4/ZSTD |
 | 写出 | ORC 0.12、DIRECT/RLEv1、重复字符串字典、nullable、多 stripe、NONE/ZLIB、用户元数据和 stripe 统计 | row-index/bloom 写出、加密、其他 codec |
@@ -144,7 +144,7 @@ python scripts/verify_repository.py
 
 pyorc 对照脚本比较 Apache ORC→MoonORC 读取、MoonORC→Apache ORC 读取、重新编码、空值/类型、64位边界和拒绝覆盖等行为。`fixtures/*.orc` 仅含项目自造数据；可用 `scripts/interop.py generate fixtures` 生成，再运行 `scripts/embed_fixtures.py` 与 `moon fmt`。嵌入字节是生成**数据**，不计入有效代码行数。
 
-[Linux/Windows GitHub Actions](https://github.com/oyjh0381/MoonORC/actions) 覆盖 check/build/test 四后端、fmt/API 一致性、五个业务/规模/新增场景、独立互操作及打包卫生；工程检查不等于正式赛事验收。
+[Linux/Windows GitHub Actions](https://github.com/oyjh0381/MoonORC/actions) 覆盖 check/build/test 四后端、fmt/API 一致性、七个业务/规模/新增场景、两组独立互操作及打包卫生；工程检查不等于正式赛事验收。
 
 ## 资源与性能
 
@@ -164,8 +164,8 @@ pyorc 对照脚本比较 Apache ORC→MoonORC 读取、MoonORC→Apache ORC 读�
 **消费方字段契约检查**（`Schema::check_contract`）；**保留源文件行号的选择扫描**（`Scanner::next_positioned`）。详见[功能、用途和边界](docs/NOVEMBER_FEATURES.md)，运行 `moon run examples/november --target native --deny-warn`。功能包含于0.1.0，安装方式见上文。
 
 
-## 本地开发增量（未发布）
+## 0.2.0 辅助批次操作
 
 新增 **稳定多列类型排序**、**精确类型键稳定去重**，用途、限制和复杂度见 [功能文档](docs/EXPANSION_20261106.md)。
 从本仓库源码运行 `moon run examples/expansion --target native --deny-warn`。
-本节 API 尚未包含在已发布的 0.1.0 中。
+本节 API 从 0.2.0 提供，0.1.0 不含这些接口；它们是列式交换的辅助能力，不替代基础格式兼容。

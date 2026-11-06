@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — 2026-11-06
+## 0.2.0 — 2026-11-06
 
 - Prioritize foundational ORC format coverage: DECIMAL(1..38, scale), CHAR and VARCHAR parameterized schema and bidirectional codecs.
 - Exact bounded decimal varints/scale RLE, Unicode code-point lengths, canonical CHAR API/padded wire representation and padding budgets.

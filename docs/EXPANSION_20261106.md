@@ -1,6 +1,6 @@
 # MoonORC 增量功能：2026-11-06
 
-状态：本地未发布增量。使用本目录源码运行，已发布的 0.1.0 不包含本页新增 API。
+版本：0.2.0。使用本版本包或相应源码运行，旧版 0.1.0 不包含本页新增 API。
 
 ## 稳定多列类型排序与精确类型键稳定去重
 `Batch::sort_rows(keys, limits~)` 接受 SortKey 的 column/descending/nulls_first。
