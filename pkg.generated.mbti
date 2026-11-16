@@ -11,11 +11,12 @@ pub fn concat(Array[Batch], limits? : Limits) -> Batch raise OrcError
 pub fn write(Batch, options? : WriteOptions, metadata? : Map[String, Bytes], limits? : Limits) -> Bytes raise OrcError
 
 // Errors
+#derive(Eq, @debug.Debug)
 pub suberror OrcError {
   Invalid(String, Int32)
   Unsupported(String)
   Limit(String)
-} derive(Eq, @debug.Debug)
+}
 pub fn OrcError::equal(Self, Self) -> Bool
 pub fn OrcError::not_equal(Self, Self) -> Bool
 pub fn OrcError::to_repr(Self) -> @debug.Repr
@@ -38,6 +39,7 @@ pub fn Batch::sort_rows(Self, Array[SortKey], limits? : Limits) -> Self raise Or
 pub fn Batch::take(Self, Array[Int32], limits? : Limits) -> Self raise OrcError
 pub fn Batch::unique_rows(Self, Array[String], limits? : Limits) -> Self raise OrcError
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Cell {
   Null
   Bool(Bool)
@@ -46,48 +48,54 @@ pub(all) enum Cell {
   Text(String)
   Blob(Bytes)
   Days(Int32)
+  Time(TimestampValue)
   DecimalNumber(DecimalValue)
-} derive(Eq, @debug.Debug)
+}
 pub fn Cell::equal(Self, Self) -> Bool
 pub fn Cell::not_equal(Self, Self) -> Bool
 pub fn Cell::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Column {
   name : String
   kind : Kind
-} derive(Eq, @debug.Debug)
+}
 pub fn Column::equal(Self, Self) -> Bool
 pub fn Column::not_equal(Self, Self) -> Bool
 pub fn Column::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Comparison {
   Equal
   Less
   LessEqual
   Greater
   GreaterEqual
-} derive(Eq, @debug.Debug)
+}
 pub fn Comparison::equal(Self, Self) -> Bool
 pub fn Comparison::not_equal(Self, Self) -> Bool
 pub fn Comparison::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Compression {
   None
   Zlib
-} derive(Eq, @debug.Debug)
+}
 pub fn Compression::equal(Self, Self) -> Bool
 pub fn Compression::not_equal(Self, Self) -> Bool
 pub fn Compression::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub struct DecimalValue {
   // private fields
-} derive(Eq, @debug.Debug)
+}
 pub fn DecimalValue::equal(Self, Self) -> Bool
 pub fn DecimalValue::not_equal(Self, Self) -> Bool
 pub fn DecimalValue::parse(String, Int32, Int32) -> Self raise OrcError
 pub fn DecimalValue::to_repr(Self) -> @debug.Repr
 pub fn DecimalValue::to_string(Self) -> String
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Kind {
   Boolean
   Byte
@@ -99,14 +107,17 @@ pub(all) enum Kind {
   String
   Binary
   Date
+  Timestamp
+  TimestampInstant
   Decimal(Int32, Int32)
   Varchar(Int32)
   Char(Int32)
-} derive(Eq, @debug.Debug)
+}
 pub fn Kind::equal(Self, Self) -> Bool
 pub fn Kind::not_equal(Self, Self) -> Bool
 pub fn Kind::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Limits {
   max_file_bytes : Int32
   max_decoded_bytes : Int32
@@ -114,7 +125,7 @@ pub(all) struct Limits {
   max_columns : Int32
   max_stripes : Int32
   max_fields : Int32
-} derive(Eq, @debug.Debug)
+}
 pub fn Limits::default() -> Self
 pub fn Limits::equal(Self, Self) -> Bool
 pub fn Limits::not_equal(Self, Self) -> Bool
@@ -140,6 +151,7 @@ pub(all) struct PositionedBatch {
   source_rows : Array[Int32]
 }
 
+#derive(@debug.Debug)
 pub(all) enum Predicate {
   Always(Bool)
   Compare(String, Comparison, Cell)
@@ -147,25 +159,27 @@ pub(all) enum Predicate {
   And(Predicate, Predicate)
   Or(Predicate, Predicate)
   Not(Predicate)
-} derive(@debug.Debug)
+}
 pub fn Predicate::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct RowGroupInfo {
   row_start : Int32
   row_count : Int32
   positions : Array[UInt64]
   statistics : Statistics
-} derive(Eq, @debug.Debug)
+}
 pub fn RowGroupInfo::equal(Self, Self) -> Bool
 pub fn RowGroupInfo::not_equal(Self, Self) -> Bool
 pub fn RowGroupInfo::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct ScanMetrics {
   stripes_read : Int32
   stripes_skipped : Int32
   rows_examined : Int32
   rows_returned : Int32
-} derive(Eq, @debug.Debug)
+}
 pub fn ScanMetrics::equal(Self, Self) -> Bool
 pub fn ScanMetrics::not_equal(Self, Self) -> Bool
 pub fn ScanMetrics::to_repr(Self) -> @debug.Repr
@@ -198,42 +212,55 @@ pub(all) struct SortKey {
   nulls_first : Bool
 }
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Statistics {
   count : Int32?
   has_null : Bool?
   minimum : Cell?
   maximum : Cell?
-} derive(Eq, @debug.Debug)
+}
 pub fn Statistics::equal(Self, Self) -> Bool
 pub fn Statistics::not_equal(Self, Self) -> Bool
 pub fn Statistics::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct StreamRange {
   column : String
   kind : Int32
   offset : Int32
   length : Int32
-} derive(Eq, @debug.Debug)
+}
 pub fn StreamRange::equal(Self, Self) -> Bool
 pub fn StreamRange::not_equal(Self, Self) -> Bool
 pub fn StreamRange::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct StripeInfo {
   offset : Int32
   index_bytes : Int32
   data_bytes : Int32
   footer_bytes : Int32
   rows : Int32
-} derive(Eq, @debug.Debug)
+}
 pub fn StripeInfo::equal(Self, Self) -> Bool
 pub fn StripeInfo::not_equal(Self, Self) -> Bool
 pub fn StripeInfo::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
+pub(all) struct TimestampValue {
+  seconds : Int64
+  nanos : Int32
+}
+pub fn TimestampValue::equal(Self, Self) -> Bool
+pub fn TimestampValue::not_equal(Self, Self) -> Bool
+pub fn TimestampValue::to_repr(Self) -> @debug.Repr
+
+#derive(Eq, @debug.Debug)
 pub(all) struct WriteOptions {
   compression : Compression
   block_size : Int32
   stripe_rows : Int32
-} derive(Eq, @debug.Debug)
+}
 pub fn WriteOptions::default() -> Self
 pub fn WriteOptions::equal(Self, Self) -> Bool
 pub fn WriteOptions::not_equal(Self, Self) -> Bool

@@ -16,7 +16,7 @@ ORC 将可空的表记录拆成带类型的列流和独立 stripe，支持只解
 
 ## 环境与复现
 
-安装 [官方 MoonBit 工具链](https://docs.moonbitlang.com/en/latest/download-and-install.html)，已验证 `moonc 0.10.16`，CI 固定 compiler/core 0.10.16+b1a0e846e。在本项目目录执行：
+安装 [官方 MoonBit 工具链](https://docs.moonbitlang.com/en/latest/download-and-install.html)，已验证 `moonc 0.10.20`，CI 固定 compiler/core 0.10.20+65efd5b93。在本项目目录执行：
 
 ```sh
 moon version --all
@@ -77,7 +77,7 @@ fn main raise {
 - **DECIMAL(p,s)**：precision 1..38、scale 0..precision；精确系数与 scale 编解码，支持负值、38 位极值、null 和原始 schema 参数；不经过 Double，不静默舍入。
 - **VARCHAR(n)**：保留长度参数，按 Unicode 字符数验证，保留尾空格，超长拒绝。
 - **CHAR(n)**：API 使用无尾 ASCII 空格的规范值；文件层按声明字符数补空格，解码移除填充。类型长度与填充膨胀受预算检查。
-- 原有整数、浮点、布尔、字符串、二进制和日期继续可用。TIMESTAMP/INSTANT、嵌套 STRUCT/LIST/MAP/UNION 有分阶段路线及独立互操作门槛，当前仍明确拒绝。
+- 原有整数、浮点、布尔、字符串、二进制和日期继续可用。本地增量支持 TIMESTAMP/INSTANT。嵌套 STRUCT/LIST/MAP/UNION 仍按类型矩阵分阶段推进。
 
 ```moonbit
 let schema = @orc.Schema::new([{ name: "amount", kind: Decimal(38, 8) }])
@@ -112,7 +112,7 @@ assert_eq(result.column("amount"), batch.column("amount"))
 | 方面 | 已实现 | 明确不支持/不承诺 |
 | --- | --- | --- |
 | 文件 | ORC 0.11/0.12 入口、protobuf tail/stripe、用户元数据 | 加密、活动文件恢复、事务/ACID、任意未来版本 |
-| Schema | flat struct：boolean、byte/short/int/long、float/double、string、binary、date、decimal(p,s)、char(n)、varchar(n) | nested/list/map/union、timestamp；参数及精度边界见类型矩阵 |
+| Schema | flat struct：boolean、byte/short/int/long、float/double、string、binary、date、decimal(p,s)、char(n)、varchar(n)、timestamp／timestamp instant | nested/list/map/union、非 UTC 本地时间列；参数及精度边界见类型矩阵 |
 | 编码读取 | byte/boolean RLE、整数 RLEv1、RLEv2 四模式、直接与字典字符串 | 自定义列编码、未验证类型变体 |
 | 压缩 | NONE、ZLIB（ORC raw DEFLATE 分块） | SNAPPY/LZO/LZ4/ZSTD |
 | 写出 | ORC 0.12、DIRECT/RLEv1、重复字符串字典、nullable、多 stripe、NONE/ZLIB、用户元数据和 stripe 统计 | row-index/bloom 写出、加密、其他 codec |
@@ -169,3 +169,7 @@ pyorc 对照脚本比较 Apache ORC→MoonORC 读取、MoonORC→Apache ORC 读�
 新增 **稳定多列类型排序**、**精确类型键稳定去重**，用途、限制和复杂度见 [功能文档](docs/EXPANSION_20261106.md)。
 从本仓库源码运行 `moon run examples/expansion --target native --deny-warn`。
 本节 API 从 0.2.0 提供，0.1.0 不含这些接口；它们是列式交换的辅助能力，不替代基础格式兼容。
+
+## 标准 TIMESTAMP 与 TIMESTAMP_INSTANT (Unreleased)
+
+平坦 schema 支持两类时间列，以 Unix 秒和纳秒表示时刻并保留空值，支持排序与逐行比较。可读 DIRECT/DIRECT_V2，写出 DIRECT 的 DATA/SECONDARY 流。Apache ORC C++ 双向验证负时间戳、秒边界、纳秒与空值。TIMESTAMP 的 writerTimezone 限定显式 UTC 或等价标识，TIMESTAMP_INSTANT 用 UTC。Apache ORC 对 Unix 纪元前一秒内的部分小数值不能无歧义往返，写入明确拒绝。

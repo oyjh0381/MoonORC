@@ -1,11 +1,12 @@
 ///|
+#derive(Debug, Eq)
 pub(all) struct StripeInfo {
   offset : Int32
   index_bytes : Int32
   data_bytes : Int32
   footer_bytes : Int32
   rows : Int32
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend StripeInfo with @debug.Debug::{to_repr}

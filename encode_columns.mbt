@@ -19,7 +19,10 @@ fn text_column_bytes(s : String, kind : Kind) -> Bytes {
 
 ///|
 /// Writer deliberately emits RLEv1 DIRECT, allowed in ORC 0.12 files.
-fn encode_column(kind : Kind, values : Array[Cell]) -> EncodedColumn {
+fn encode_column(
+  kind : Kind,
+  values : Array[Cell],
+) -> EncodedColumn raise OrcError {
   let streams : Array[(Int32, Bytes)] = []
   let present = values.map(x => x != Null)
   if present.any(x => !x) {
@@ -106,6 +109,19 @@ fn encode_column(kind : Kind, values : Array[Cell]) -> EncodedColumn {
         }
       }
       streams.push((1, raw.finish()))
+    }
+    Timestamp | TimestampInstant => {
+      let seconds : Array[UInt64] = []
+      let nanos : Array[UInt64] = []
+      for v in values {
+        if v is Time(t) {
+          let (sec, nano) = encode_timestamp(t)
+          seconds.push(sec.reinterpret_as_uint64())
+          nanos.push(nano)
+        }
+      }
+      streams.push((1, encode_rle1(seconds, true)))
+      streams.push((5, encode_rle1(nanos, false)))
     }
     Decimal(_, scale) => {
       for v in values {

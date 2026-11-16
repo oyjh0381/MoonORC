@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased - 2026-11-16
+
+- 标准 TIMESTAMP 与 TIMESTAMP_INSTANT
+
 ## 0.2.0 — 2026-11-06
 
 - Prioritize foundational ORC format coverage: DECIMAL(1..38, scale), CHAR and VARCHAR parameterized schema and bidirectional codecs.

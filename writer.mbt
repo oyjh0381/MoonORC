@@ -1,9 +1,10 @@
 ///|
+#derive(Debug, Eq)
 pub(all) struct WriteOptions {
   compression : Compression
   block_size : Int32
   stripe_rows : Int32
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend WriteOptions with @debug.Debug::{to_repr}
@@ -77,6 +78,11 @@ fn write_stripe(
   }
   for enc in encodings {
     footer.message(2, enc)
+  }
+  if batch.schema.columns.any(c => {
+      c.kind == Timestamp || c.kind == TimestampInstant
+    }) {
+    footer.message(3, b"UTC")
   }
   let data_bytes = body.length() - start
   let encoded_footer = compress(

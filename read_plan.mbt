@@ -1,11 +1,12 @@
 ///|
 /// Exact encoded file ranges, not decoded offsets or a remote downloader.
+#derive(Debug, Eq)
 pub(all) struct StreamRange {
   column : String
   kind : Int32
   offset : Int32
   length : Int32
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend StreamRange with @debug.Debug::{to_repr}

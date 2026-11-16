@@ -1,8 +1,9 @@
 ///|
+#derive(Debug, Eq)
 pub(all) enum Compression {
   None
   Zlib
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend Compression with @debug.Debug::{to_repr}

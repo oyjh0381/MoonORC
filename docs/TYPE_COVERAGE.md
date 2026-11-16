@@ -13,7 +13,7 @@ full ORC compliance. Source: [Apache ORC v1 specification](https://orc.apache.or
 | DECIMAL(p,s) | **new** | **new** | p=1..38, s=0..p; exact coefficients; DIRECT/V2 reader, DIRECT writer |
 | VARCHAR(n) | **new** | **new** | 1..65535 Unicode code points; no silent truncation |
 | CHAR(n) | **new** | **new** | 1..65535 code points; normalized API, file-level ASCII space padding |
-| TIMESTAMP, TIMESTAMP_INSTANT | planned | planned | epoch, nanoseconds, timezone and legacy calendar validation required |
+| TIMESTAMP, TIMESTAMP_INSTANT | yes | yes | unreleased, UTC writer profile, exact nanoseconds; explicit negative-epoch edge refusal |
 | STRUCT nesting, LIST, MAP, UNION | planned | planned | root remains flat STRUCT today; child type IDs/streams not implemented |
 
 ## Current foundational additions
@@ -53,11 +53,9 @@ The next core deliverables are ordered below. Higher-level contracts, row
 provenance, sorting and deduplication remain optional utilities; new development
 priority is type/encoding coverage. Plans are not implemented capability claims.
 
-1. **Time scalar phase**: separate local TIMESTAMP from UTC TIMESTAMP_INSTANT,
-   retain Int64 seconds and nanoseconds, implement secondary nanos compression,
-   stripe writerTimezone and epoch handling. Exit gate: Apache ORC bidirectional
-   fixtures before/after epoch, nanosecond extremes, timezone/DST and pre-calendar
-   cases; explicitly reject unsupported zones rather than shift values silently.
+1. **Time scalar phase**: the UTC writer baseline is implemented and tested
+   against Apache ORC. Named writer zones and DST/calendar conversion remain
+   follow-up work. Decoded timestamp statistics are not used for pruning.
 2. **Nested STRUCT/LIST phase**: recursive schema with preorder type IDs,
    depth/node/expanded element budgets, parent-present suppression, list LENGTH
    and child cardinality. Exit gate: nullable parent vs empty list vs null child,

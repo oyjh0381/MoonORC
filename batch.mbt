@@ -1,4 +1,5 @@
 ///|
+#derive(Debug, Eq)
 pub(all) enum Cell {
   Null
   Bool(Bool)
@@ -7,8 +8,9 @@ pub(all) enum Cell {
   Text(String)
   Blob(Bytes)
   Days(Int32)
+  Time(TimestampValue)
   DecimalNumber(DecimalValue)
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend Cell with @debug.Debug::{to_repr}
@@ -45,6 +47,8 @@ fn Cell::validate(self : Cell, kind : Kind) -> Unit raise OrcError {
       d.scale == s &&
       d.coefficient.length() - (if d.coefficient[0] == '-' { 1 } else { 0 }) <=
       p
+    (Time(t), Timestamp | TimestampInstant) =>
+      t.nanos >= 0 && t.nanos < 1000000000
     (Blob(_), Binary) => true
     (Days(_), Date) => true
     _ => false
@@ -77,6 +81,7 @@ pub fn Batch::new(
       value.validate(schema.columns[i].kind)
       match value {
         DecimalNumber(d) => bytes = add(bytes, d.coefficient.length())
+        Time(_) => bytes = add(bytes, 8)
         Text(s) => {
           bytes = add(bytes, @utf8.encode(s).length())
           if schema.columns[i].kind is Char(n) {

@@ -1,9 +1,10 @@
 ///|
 /// Exact fixed-scale decimal, up to 38 significant coefficient digits.
+#derive(Debug, Eq)
 pub struct DecimalValue {
   priv coefficient : String
   priv scale : Int32
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend DecimalValue with @debug.Debug::{to_repr}

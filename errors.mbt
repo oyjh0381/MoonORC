@@ -1,9 +1,10 @@
 ///|
+#derive(Debug, Eq)
 pub suberror OrcError {
   Invalid(String, Int32)
   Unsupported(String)
   Limit(String)
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend OrcError with @debug.Debug::{to_repr}
@@ -12,6 +13,7 @@ pub extend OrcError with @debug.Debug::{to_repr}
 pub extend OrcError with Eq::{equal, not_equal}
 
 ///|
+#derive(Debug, Eq)
 pub(all) struct Limits {
   max_file_bytes : Int32
   max_decoded_bytes : Int32
@@ -19,7 +21,7 @@ pub(all) struct Limits {
   max_columns : Int32
   max_stripes : Int32
   max_fields : Int32
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend Limits with @debug.Debug::{to_repr}

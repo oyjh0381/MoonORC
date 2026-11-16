@@ -17,6 +17,7 @@ priv struct Stripe {
   info : StripeInfo
   streams : Array[LocatedStream]
   encodings : Array[Encoding]
+  utc_writer : Bool
 }
 
 ///|
@@ -82,7 +83,10 @@ fn OrcFile::stripe(self : OrcFile, index : Int32) -> Stripe raise OrcError {
   if streams.any(s => s.column == 0 && s.kind < 6) {
     raise Unsupported("nullable root struct")
   }
-  { info, streams, encodings, }
+  let zones = blobs(fields, 3)
+  let utc_writer = zones.length() == 1 &&
+    [b"UTC", b"GMT", b"Etc/UTC", b"Etc/GMT"].contains(zones[0])
+  { info, streams, encodings, utc_writer, }
 }
 
 ///|

@@ -36,7 +36,7 @@ fn OrcFile::decode_column(
   }
   let count = present.filter(x => x).length()
   let kind = self.schema.columns[index].kind
-  let proleptic = if kind == Date {
+  let proleptic = if kind == Date || kind == Timestamp {
     number(parse_proto(self.footer, self.limits), 11, 0UL) == 2UL
   } else {
     false
@@ -89,6 +89,32 @@ fn OrcFile::decode_column(
             Float::reinterpret_from_uint(c.little(4).to_uint()).to_double()
           },
         )
+      })
+    }
+    Timestamp | TimestampInstant => {
+      if kind == Timestamp && !stripe.utc_writer {
+        raise Unsupported(
+          "local TIMESTAMP requires an explicit UTC writer timezone",
+        )
+      }
+      if encoding.kind != 0 && encoding.kind != 2 {
+        raise Unsupported("timestamp encoding")
+      }
+      let seconds = decode_integers(raw, count, true, encoding.kind)
+      let nanos = decode_integers(
+        self.required_stream(stripe, id, 5, count),
+        count,
+        false,
+        encoding.kind,
+      )
+      Array::makei(count, i => {
+        let t = decode_timestamp(seconds[i].reinterpret_as_int64(), nanos[i])
+        if kind == Timestamp && t.seconds < -12219292800L && !proleptic {
+          raise Unsupported(
+            "pre-Gregorian local timestamp in hybrid calendar file",
+          )
+        }
+        Time(t)
       })
     }
     Decimal(precision, scale) => {

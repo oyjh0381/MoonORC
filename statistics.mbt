@@ -1,11 +1,12 @@
 ///|
 /// Missing bounds are not a proof. Counts describe non-null values only.
+#derive(Debug, Eq)
 pub(all) struct Statistics {
   count : Int32?
   has_null : Bool?
   minimum : Cell?
   maximum : Cell?
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend Statistics with @debug.Debug::{to_repr}
@@ -35,6 +36,14 @@ fn compare_cell(a : Cell, b : Cell) -> Int32? {
     (DecimalNumber(a), DecimalNumber(b)) => Some(compare_decimal(a, b))
     (Integer(a), Integer(b)) => Some(a.compare(b))
     (Days(a), Days(b)) => Some(a.compare(b))
+    (Time(a), Time(b)) =>
+      Some(
+        if a.seconds == b.seconds {
+          a.nanos.compare(b.nanos)
+        } else {
+          a.seconds.compare(b.seconds)
+        },
+      )
     (Text(a), Text(b)) => Some(utf8_compare(a, b))
     (Bool(a), Bool(b)) =>
       Some((if a { 1 } else { 0 }).compare(if b { 1 } else { 0 }))
@@ -58,7 +67,7 @@ fn summarize(values : Array[Cell]) -> Statistics {
     if v is Blob(_) {
       no_bounds = true
     }
-    if v is DecimalNumber(_) {
+    if v is DecimalNumber(_) || v is Time(_) {
       no_bounds = true
     }
     if v is Real(_) {

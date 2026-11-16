@@ -2,6 +2,11 @@
 fn cell_json(cell : @orc.Cell) -> Json {
   match cell {
     DecimalNumber(d) => Json::string(d.to_string())
+    Time(t) =>
+      {
+        "seconds": Json::string(t.seconds.to_string()),
+        "nanos": Json::number(t.nanos.to_double()),
+      }
     Null => Json::null()
     Bool(x) => Json::boolean(x)
     Integer(n) => Json::string(n.to_string())

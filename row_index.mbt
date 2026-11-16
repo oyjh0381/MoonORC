@@ -2,12 +2,13 @@
 
 ///|
 /// does not promise row-group seek or selective decompression within a stripe.
+#derive(Debug, Eq)
 pub(all) struct RowGroupInfo {
   row_start : Int32
   row_count : Int32
   positions : Array[UInt64]
   statistics : Statistics
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend RowGroupInfo with @debug.Debug::{to_repr}

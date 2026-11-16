@@ -84,6 +84,7 @@ fn exact_cell_key(cell : Cell, maximum : Int32) -> String raise OrcError {
     Bool(v) => if v { "B1" } else { "B0" }
     Integer(v) => "I" + v.to_string()
     Days(v) => "D" + v.to_string()
+    Time(v) => "T" + v.seconds.to_string() + ":" + v.nanos.to_string()
     Real(v) => "R" + v.reinterpret_as_uint64().to_string()
     Text(v) => "T" + v
     Blob(v) => {

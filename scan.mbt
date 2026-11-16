@@ -1,10 +1,11 @@
 ///|
+#derive(Debug, Eq)
 pub(all) struct ScanMetrics {
   stripes_read : Int32
   stripes_skipped : Int32
   rows_examined : Int32
   rows_returned : Int32
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend ScanMetrics with @debug.Debug::{to_repr}

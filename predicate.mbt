@@ -1,11 +1,12 @@
 ///|
+#derive(Debug, Eq)
 pub(all) enum Comparison {
   Equal
   Less
   LessEqual
   Greater
   GreaterEqual
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend Comparison with @debug.Debug::{to_repr}
@@ -15,6 +16,7 @@ pub extend Comparison with Eq::{equal, not_equal}
 
 ///|
 /// Composition has SQL three-valued null semantics at row level.
+#derive(Debug)
 pub(all) enum Predicate {
   Always(Bool)
   Compare(String, Comparison, Cell)
@@ -22,7 +24,7 @@ pub(all) enum Predicate {
   And(Predicate, Predicate)
   Or(Predicate, Predicate)
   Not(Predicate)
-} derive(Debug)
+}
 
 ///|
 pub extend Predicate with @debug.Debug::{to_repr}

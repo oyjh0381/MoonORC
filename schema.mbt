@@ -1,4 +1,5 @@
 ///|
+#derive(Debug, Eq)
 pub(all) enum Kind {
   Boolean
   Byte
@@ -10,10 +11,12 @@ pub(all) enum Kind {
   String
   Binary
   Date
+  Timestamp
+  TimestampInstant
   Decimal(Int32, Int32)
   Varchar(Int32)
   Char(Int32)
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend Kind with @debug.Debug::{to_repr}
@@ -22,10 +25,11 @@ pub extend Kind with @debug.Debug::{to_repr}
 pub extend Kind with Eq::{equal, not_equal}
 
 ///|
+#derive(Debug, Eq)
 pub(all) struct Column {
   name : String
   kind : Kind
-} derive(Debug, Eq)
+}
 
 ///|
 pub extend Column with @debug.Debug::{to_repr}
@@ -97,6 +101,8 @@ fn Kind::code(self : Kind) -> Int32 {
     String => 7
     Binary => 8
     Date => 15
+    Timestamp => 9
+    TimestampInstant => 18
     Decimal(_, _) => 14
     Varchar(_) => 16
     Char(_) => 17
@@ -116,7 +122,9 @@ fn kind_from(code : Int32) -> Kind raise OrcError {
     7 => String
     8 => Binary
     15 => Date
-    _ => raise Unsupported("nested or timestamp column type")
+    9 => Timestamp
+    18 => TimestampInstant
+    _ => raise Unsupported("nested or unknown column type")
   }
 }
 
