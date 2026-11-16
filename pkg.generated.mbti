@@ -252,8 +252,10 @@ pub(all) struct TimestampValue {
   nanos : Int32
 }
 pub fn TimestampValue::equal(Self, Self) -> Bool
+pub fn TimestampValue::from_unix_millis(Int64) -> Self
 pub fn TimestampValue::not_equal(Self, Self) -> Bool
 pub fn TimestampValue::to_repr(Self) -> @debug.Repr
+pub fn TimestampValue::to_unix_millis(Self) -> Int64 raise OrcError
 
 #derive(Eq, @debug.Debug)
 pub(all) struct WriteOptions {
