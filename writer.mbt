@@ -90,6 +90,9 @@ fn write_stripe(
     options.compression,
     options.block_size,
   )
+  if add(body.length(), encoded_footer.length()) > limits.max_file_bytes {
+    raise Limit("ORC stripe footer bytes")
+  }
   body.raw(encoded_footer)
   {
     offset: start,

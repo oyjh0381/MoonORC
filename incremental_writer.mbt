@@ -50,6 +50,10 @@ pub fn Writer::push(self : Writer, batch : Batch) -> Unit raise OrcError {
   ignore(Batch::new(batch.schema, batch.values, limits=self.limits))
   let stage = output()
   let stats = output()
+  let stage_limits = {
+    ..self.limits,
+    max_file_bytes: self.limits.max_file_bytes - self.body.length(),
+  }
   let stripes : Array[StripeInfo] = []
   let mut at = 0
   while at < batch.rows {
@@ -58,7 +62,7 @@ pub fn Writer::push(self : Writer, batch : Batch) -> Unit raise OrcError {
     }
     let count = imin(self.options.stripe_rows, batch.rows - at)
     let part = batch.slice(at, count)
-    let s = write_stripe(part, stage, self.options, self.limits)
+    let s = write_stripe(part, stage, self.options, stage_limits)
     stripes.push({ ..s, offset: add(s.offset, self.body.length()), })
     let stripe_stat = output()
     let root = output()
@@ -72,8 +76,7 @@ pub fn Writer::push(self : Writer, batch : Batch) -> Unit raise OrcError {
       )
     }
     stats.message(1, stripe_stat.finish())
-    if add(self.body.length(), stage.length()) > self.limits.max_file_bytes ||
-      add(self.statistics.length(), stats.length()) >
+    if add(self.statistics.length(), stats.length()) >
       self.limits.max_decoded_bytes {
       raise Limit("staged writer bytes")
     }
