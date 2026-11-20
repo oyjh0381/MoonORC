@@ -173,3 +173,7 @@ pyorc 对照脚本比较 Apache ORC→MoonORC 读取、MoonORC→Apache ORC 读�
 ## 标准 TIMESTAMP 与 TIMESTAMP_INSTANT (Unreleased)
 
 平坦 schema 支持两类时间列，以 Unix 秒和纳秒表示时刻并保留空值，支持排序与逐行比较。可读 DIRECT/DIRECT_V2，写出 DIRECT 的 DATA/SECONDARY 流。Apache ORC C++ 双向验证负时间戳、秒边界、纳秒与空值。TIMESTAMP 的 writerTimezone 限定显式 UTC 或等价标识，TIMESTAMP_INSTANT 用 UTC。Apache ORC 对 Unix 纪元前一秒内的部分小数值不能无歧义往返，写入明确拒绝。
+
+## November additions
+
+Timestamp workflows can now use exact Unix microsecond conversion, checked nanosecond shifts and half-open timestamp predicates. Both timestamp kinds use the existing ORC timestamp cells and their established timezone requirements. `plan_rows` produces projected stream ranges for the stripes intersecting a source row window. Each plan gives a stripe-local row slice. Selecting a row window still requires decoding the selected streams for the intersecting stripes.

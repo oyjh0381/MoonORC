@@ -136,6 +136,7 @@ pub struct OrcFile {
 }
 pub fn OrcFile::compression(Self) -> Compression
 pub fn OrcFile::open(Bytes, limits? : Limits) -> Self raise OrcError
+pub fn OrcFile::plan_rows(Self, Int32, Int32, Array[String], include_indexes? : Bool) -> Array[StripeRowPlan] raise OrcError
 pub fn OrcFile::plan_stripe(Self, Int32, Array[String], include_indexes? : Bool) -> Array[StreamRange] raise OrcError
 pub fn OrcFile::read_stripe(Self, Int32, columns? : Array[String]?) -> Batch raise OrcError
 pub fn OrcFile::row_count(Self) -> Int32
@@ -160,6 +161,7 @@ pub(all) enum Predicate {
   Or(Predicate, Predicate)
   Not(Predicate)
 }
+pub fn Predicate::timestamp_range(String, TimestampValue, TimestampValue) -> Self raise OrcError
 pub fn Predicate::to_repr(Self) -> @debug.Repr
 
 #derive(Eq, @debug.Debug)
@@ -247,14 +249,28 @@ pub fn StripeInfo::not_equal(Self, Self) -> Bool
 pub fn StripeInfo::to_repr(Self) -> @debug.Repr
 
 #derive(Eq, @debug.Debug)
+pub(all) struct StripeRowPlan {
+  stripe : Int32
+  first_row : Int32
+  row_count : Int32
+  streams : Array[StreamRange]
+}
+pub fn StripeRowPlan::equal(Self, Self) -> Bool
+pub fn StripeRowPlan::not_equal(Self, Self) -> Bool
+pub fn StripeRowPlan::to_repr(Self) -> @debug.Repr
+
+#derive(Eq, @debug.Debug)
 pub(all) struct TimestampValue {
   seconds : Int64
   nanos : Int32
 }
 pub fn TimestampValue::equal(Self, Self) -> Bool
+pub fn TimestampValue::from_unix_micros(Int64) -> Self
 pub fn TimestampValue::from_unix_millis(Int64) -> Self
 pub fn TimestampValue::not_equal(Self, Self) -> Bool
+pub fn TimestampValue::shift_nanos(Self, Int64) -> Self raise OrcError
 pub fn TimestampValue::to_repr(Self) -> @debug.Repr
+pub fn TimestampValue::to_unix_micros(Self) -> Int64 raise OrcError
 pub fn TimestampValue::to_unix_millis(Self) -> Int64 raise OrcError
 
 #derive(Eq, @debug.Debug)
