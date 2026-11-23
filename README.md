@@ -177,3 +177,9 @@ pyorc 对照脚本比较 Apache ORC→MoonORC 读取、MoonORC→Apache ORC 读�
 ## November additions
 
 Timestamp workflows can now use exact Unix microsecond conversion, checked nanosecond shifts and half-open timestamp predicates. Both timestamp kinds use the existing ORC timestamp cells and their established timezone requirements. `plan_rows` produces projected stream ranges for the stripes intersecting a source row window. Each plan gives a stripe-local row slice. Selecting a row window still requires decoding the selected streams for the intersecting stripes.
+
+## 本期交付复核
+
+当前源码在 0.2.0 的标量类型交换基础上支持 TIMESTAMP 与 TIMESTAMP_INSTANT。UTC 范围内保留 Unix 秒、纳秒和 null，不用浮点表示时间。精确微秒转换、纳秒平移和半开时间区间可与按 stripe 选行、投影一起使用。
+
+四个后端各通过 67 项测试，七个示例及三组 Apache ORC 双向验证均通过。时间戳独立对照覆盖两种时间类型、精确纳秒、空值和 stripe footer 的 UTC writerTimezone。非 UTC 本地时间与嵌套容器仍列在标准类型路线中。
